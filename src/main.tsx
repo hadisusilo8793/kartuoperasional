@@ -9,6 +9,8 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import { LoginPage } from '@/pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { TransaksiPinjamPage } from '@/pages/TransaksiPinjamPage';
+import { PengembalianPage } from '@/pages/PengembalianPage';
 import { MasterKartuPage } from '@/pages/MasterKartuPage';
 import { MasterDriverPage } from '@/pages/MasterDriverPage';
 import { MasterArmadaPage } from '@/pages/MasterArmadaPage';
@@ -30,8 +32,8 @@ const router = createBrowserRouter([
   { path: "/", element: <LoginPage />, errorElement: <RouteErrorBoundary /> },
   { path: "/login", element: <LoginPage />, errorElement: <RouteErrorBoundary /> },
   { path: "/dashboard", element: <DashboardPage />, errorElement: <RouteErrorBoundary /> },
-  { path: "/transaksi", element: <PlaceholderPage title="Transaksi Pinjam" />, errorElement: <RouteErrorBoundary /> },
-  { path: "/pengembalian", element: <PlaceholderPage title="Pengembalian" />, errorElement: <RouteErrorBoundary /> },
+  { path: "/transaksi", element: <TransaksiPinjamPage />, errorElement: <RouteErrorBoundary /> },
+  { path: "/pengembalian", element: <PengembalianPage />, errorElement: <RouteErrorBoundary /> },
   { path: "/history", element: <PlaceholderPage title="Riwayat Transaksi" />, errorElement: <RouteErrorBoundary /> },
   { path: "/master-kartu", element: <MasterKartuPage />, errorElement: <RouteErrorBoundary /> },
   { path: "/master-driver", element: <MasterDriverPage />, errorElement: <RouteErrorBoundary /> },
