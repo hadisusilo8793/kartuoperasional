@@ -1,8 +1,12 @@
 import { SignJWT } from 'jose';
 // In a real app, use environment variables for credentials
-const ADMIN_USERNAME = "HADI SUSILO";
-const ADMIN_PASSWORD = "Wiwokdetok8793";
+export const ADMIN_USERNAME = "HADI SUSILO";
+export const ADMIN_PASSWORD = "Wiwokdetok8793";
 async function logAction(db, level, message) {
+  if (!db || typeof db.prepare !== 'function') {
+    console.warn('D1 binding not found; skipping logAction.');
+    return;
+  }
   try {
     await db.prepare('INSERT INTO logs (waktu, level, pesan) VALUES (?, ?, ?)')
       .bind(new Date().toISOString(), level, message)

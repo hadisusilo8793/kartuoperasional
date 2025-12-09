@@ -1,5 +1,9 @@
 import { jwtVerify } from 'jose';
 async function logAction(db, level, message) {
+  if (!db || typeof db.prepare !== 'function') {
+    console.warn("D1 binding missing, skipping log:", level, message);
+    return;
+  }
   try {
     await db.prepare('INSERT INTO logs (waktu, level, pesan) VALUES (?, ?, ?)')
       .bind(new Date().toISOString(), level, message)
@@ -12,7 +16,7 @@ export const onRequest = async (context) => {
   const { request, env, next } = context;
   const url = new URL(request.url);
   // Allow public access to auth, assets, and root pages
-  if (url.pathname.startsWith('/api/auth/') || url.pathname === '/api/db/backup') {
+  if (url.pathname === '/api/auth' || url.pathname.startsWith('/api/auth/') || url.pathname === '/api/db/backup') {
     return await next();
   }
   const authHeader = request.headers.get('Authorization');
@@ -22,9 +26,12 @@ export const onRequest = async (context) => {
   }
   const token = authHeader.split(' ')[1];
   try {
-    const secret = new TextEncoder().encode(env.APP_SECRET || 'your-default-secret-key-32-chars');
+    // Derive secret with fallback: env.APP_SECRET or default
+    let secretString = env.APP_SECRET || 'your-default-secret-key-32-chars';
+    const secret = new TextEncoder().encode(secretString);
     const { payload } = await jwtVerify(token, secret);
     // Attach user payload to context for use in subsequent functions
+    context.data = context.data || {};
     context.data.user = payload;
     return await next();
   } catch (err) {
