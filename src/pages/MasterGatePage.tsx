@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api-client';
 import { Toaster, toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -7,10 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Upload, Save, X, Edit, Trash2 } from 'lucide-react';
+import { Plus, Upload, Save, X, Edit, Trash2, LogOut } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Papa from 'papaparse';
-import { AppLayout } from '@/components/layout/AppLayout';
 type Gate = {
   id: number;
   kode: string;
@@ -20,6 +20,7 @@ type Gate = {
   status: 'AKTIF' | 'NONAKTIF';
 };
 export function MasterGatePage() {
+  const navigate = useNavigate();
   const [gateList, setGateList] = useState<Gate[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | 'new' | null>(null);
@@ -39,6 +40,11 @@ export function MasterGatePage() {
   useEffect(() => {
     fetchData();
   }, []);
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    toast.success('Logged out successfully');
+    navigate('/login');
+  };
   const handleAddNew = () => {
     setEditingId('new');
     setEditFormData({ kode: '', nama: '', kategori: 'TOL', area: '', status: 'AKTIF' });
@@ -125,7 +131,7 @@ export function MasterGatePage() {
     const isEditing = editingId === gate.id;
     if (isEditing) {
       return (
-        <TableRow key={gate.id} className="bg-slate-50 hover:bg-accent/50 transition-colors">
+        <TableRow key={gate.id} className="bg-slate-50">
           <TableCell><Input name="kode" value={editFormData.kode} onChange={handleInputChange} className="uppercase-input" /></TableCell>
           <TableCell><Input name="nama" value={editFormData.nama} onChange={handleInputChange} /></TableCell>
           <TableCell>
@@ -151,7 +157,7 @@ export function MasterGatePage() {
       );
     }
     return (
-      <TableRow key={gate.id} className="hover:bg-accent/50 transition-colors">
+      <TableRow key={gate.id}>
         <TableCell>{gate.kode}</TableCell>
         <TableCell>{gate.nama}</TableCell>
         <TableCell>{gate.kategori}</TableCell>
@@ -173,81 +179,88 @@ export function MasterGatePage() {
     );
   };
   return (
-    <AppLayout pageTitle="Master Gate">
+    <div className="bg-slate-50 min-h-screen">
       <Toaster richColors position="top-right" />
-      <Card className="rounded-[18px] shadow-soft">
-        <CardHeader>
-          <div className="flex flex-wrap gap-4 justify-between items-center">
-            <CardTitle>Data Gate</CardTitle>
-            <div>
-              <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileImport} />
-              <Button variant="outline" onClick={handleImportClick} className="mr-2"><Upload className="w-4 h-4 mr-2" /> Import CSV</Button>
-              <Button onClick={handleAddNew}><Plus className="w-4 h-4 mr-2" /> Tambah Gate</Button>
+      <header className="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <h1 className="text-xl font-semibold text-slate-800">Master Gate</h1>
+            <div className="flex items-center gap-4">
+              <span className="font-medium hidden sm:inline">Hadi Susilo</span>
+              <img className="h-9 w-9 rounded-full" src="https://ui-avatars.com/api/?name=Hadi+Susilo&background=0B2340&color=fff" alt="Avatar" />
+              <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout"><LogOut className="w-5 h-5 text-slate-600" /></Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Kode</TableHead>
-                  <TableHead>Nama</TableHead>
-                  <TableHead>Kategori</TableHead>
-                  <TableHead>Area</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-center">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}><TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
-                  ))
-                ) : (
-                  <>
-                    {editingId === 'new' && (
-                      <TableRow className="bg-slate-50 hover:bg-accent/50 transition-colors">
-                        <TableCell><Input name="kode" value={editFormData.kode} onChange={handleInputChange} className="uppercase-input" /></TableCell>
-                        <TableCell><Input name="nama" value={editFormData.nama} onChange={handleInputChange} /></TableCell>
-                        <TableCell>
-                          <Select name="kategori" value={editFormData.kategori} onValueChange={(v) => handleSelectChange('kategori', v)}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent><SelectItem value="TOL">TOL</SelectItem><SelectItem value="PARKIR">PARKIR</SelectItem></SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell><Input name="area" value={editFormData.area} onChange={handleInputChange} /></TableCell>
-                        <TableCell>
-                          <Select name="status" value={editFormData.status} onValueChange={(v) => handleSelectChange('status', v)}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent><SelectItem value="AKTIF">AKTIF</SelectItem><SelectItem value="NONAKTIF">NONAKTIF</SelectItem></SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex justify-center gap-2">
-                            <Button size="icon" variant="ghost" onClick={handleSave} className="text-green-600 hover:text-green-700"><Save className="w-4 h-4" /></Button>
-                            <Button size="icon" variant="ghost" onClick={handleCancel} className="text-red-600 hover:text-red-700"><X className="w-4 h-4" /></Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+        </div>
+      </header>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="py-8 md:py-10 lg:py-12">
+          <Card className="rounded-[18px] shadow-soft">
+            <CardHeader>
+              <div className="flex flex-wrap gap-4 justify-between items-center">
+                <CardTitle>Data Gate</CardTitle>
+                <div>
+                  <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileImport} />
+                  <Button variant="outline" onClick={handleImportClick} className="mr-2"><Upload className="w-4 h-4 mr-2" /> Import CSV</Button>
+                  <Button onClick={handleAddNew}><Plus className="w-4 h-4 mr-2" /> Tambah Gate</Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Kode</TableHead>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>Kategori</TableHead>
+                      <TableHead>Area</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-center">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={i}><TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
+                      ))
+                    ) : (
+                      <>
+                        {editingId === 'new' && (
+                          <TableRow className="bg-slate-50">
+                            <TableCell><Input name="kode" value={editFormData.kode} onChange={handleInputChange} className="uppercase-input" /></TableCell>
+                            <TableCell><Input name="nama" value={editFormData.nama} onChange={handleInputChange} /></TableCell>
+                            <TableCell>
+                              <Select name="kategori" value={editFormData.kategori} onValueChange={(v) => handleSelectChange('kategori', v)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent><SelectItem value="TOL">TOL</SelectItem><SelectItem value="PARKIR">PARKIR</SelectItem></SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell><Input name="area" value={editFormData.area} onChange={handleInputChange} /></TableCell>
+                            <TableCell>
+                              <Select name="status" value={editFormData.status} onValueChange={(v) => handleSelectChange('status', v)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent><SelectItem value="AKTIF">AKTIF</SelectItem><SelectItem value="NONAKTIF">NONAKTIF</SelectItem></SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex justify-center gap-2">
+                                <Button size="icon" variant="ghost" onClick={handleSave} className="text-green-600 hover:text-green-700"><Save className="w-4 h-4" /></Button>
+                                <Button size="icon" variant="ghost" onClick={handleCancel} className="text-red-600 hover:text-red-700"><X className="w-4 h-4" /></Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        {gateList.map(renderRow)}
+                      </>
                     )}
-                    {gateList.length > 0 ? gateList.map(renderRow) : (
-                      <TableRow>
-                        <TableCell colSpan={6} className="h-48 text-center">
-                          <div className="flex flex-col items-center gap-4">
-                            <p className="text-muted-foreground">Belum ada gate. Tambahkan lokasi tol/parkir!</p>
-                            <Button onClick={handleAddNew} variant="outline"><Plus className="w-4 h-4 mr-2"/> Tambah Gate Pertama</Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-    </AppLayout>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </div>
   );
 }

@@ -13,6 +13,11 @@ import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import '@/index.css'
 import { LoginPage } from '@/pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { MasterKartuPage } from '@/pages/MasterKartuPage';
+import { MasterDriverPage } from '@/pages/MasterDriverPage';
+import { MasterArmadaPage } from '@/pages/MasterArmadaPage';
+import { MasterGatePage } from '@/pages/MasterGatePage';
+import { SettingsPage } from '@/pages/SettingsPage';
 const queryClient = new QueryClient();
 const router = createBrowserRouter([
   {
@@ -28,6 +33,31 @@ const router = createBrowserRouter([
   {
     path: "/dashboard",
     element: <DashboardPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/master-kartu",
+    element: <MasterKartuPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/master-driver",
+    element: <MasterDriverPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/master-armada",
+    element: <MasterArmadaPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/master-gate",
+    element: <MasterGatePage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/settings",
+    element: <SettingsPage />,
     errorElement: <RouteErrorBoundary />,
   },
 ]);
