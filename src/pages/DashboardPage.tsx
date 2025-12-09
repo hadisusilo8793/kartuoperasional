@@ -53,10 +53,13 @@ export function DashboardPage() {
         setData(dashboardData);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to load dashboard data';
-        toast.error(errorMessage);
         if (errorMessage === 'Unauthorized') {
+          localStorage.removeItem('authToken');
           navigate('/login');
+          return;
         }
+        toast.error(errorMessage);
+        setData(null); // Set to null on error to show empty/error state
       } finally {
         setLoading(false);
       }
@@ -65,15 +68,15 @@ export function DashboardPage() {
   }, [navigate]);
   const formatCurrency = (n = 0) => `Rp ${new Intl.NumberFormat('id-ID').format(n)}`;
   const chartData = [
-    { name: 'Tol', value: data?.chartData.tol ?? 0 },
-    { name: 'Parkir', value: data?.chartData.parkir ?? 0 },
+    { name: 'Tol', value: data?.chartData?.tol ?? 0 },
+    { name: 'Parkir', value: data?.chartData?.parkir ?? 0 },
   ];
   const COLORS = ['#0B2340', '#06B6D4'];
   return (
     <AppLayout pageTitle="Dashboard">
       <Toaster richColors position="top-right" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {loading ? (
+        {loading || !data ? (
           <>
             <StatCardSkeleton />
             <StatCardSkeleton />
@@ -82,18 +85,18 @@ export function DashboardPage() {
           </>
         ) : (
           <>
-            <StatCard icon={<CreditCard />} title="Kartu Aktif" value={data?.stats.kartuAktif ?? 0} />
-            <StatCard icon={<UserSquare />} title="Driver Aktif" value={data?.stats.driverAktif ?? 0} />
-            <StatCard icon={<Truck />} title="Armada Aktif" value={data?.stats.armadaAktif ?? 0} />
-            <StatCard icon={<ArrowRightLeft />} title="Transaksi Hari Ini" value={data?.stats.transaksiHariIni ?? 0} />
+            <StatCard icon={<CreditCard />} title="Kartu Aktif" value={data.stats.kartuAktif} />
+            <StatCard icon={<UserSquare />} title="Driver Aktif" value={data.stats.driverAktif} />
+            <StatCard icon={<Truck />} title="Armada Aktif" value={data.stats.armadaAktif} />
+            <StatCard icon={<ArrowRightLeft />} title="Transaksi Hari Ini" value={data.stats.transaksiHariIni} />
           </>
         )}
       </div>
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-2 rounded-[18px] shadow-soft p-6">
           <h2 className="text-lg font-semibold mb-4">Biaya Tol vs Parkir</h2>
-          <div className="h-80">
-            {loading ? (
+          <div className="h-80 hover:ease-out duration-200">
+            {loading || !data ? (
               <Skeleton className="w-full h-full" />
             ) : (chartData[0].value === 0 && chartData[1].value === 0) ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">Belum ada data biaya transaksi.</div>
@@ -115,9 +118,9 @@ export function DashboardPage() {
         <Card className="rounded-[18px] shadow-soft p-6">
           <h2 className="text-lg font-semibold mb-4">Log Terbaru</h2>
           <div className="space-y-3">
-            {loading ? (
+            {loading || !data ? (
               Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)
-            ) : data?.logs && data.logs.length > 0 ? (
+            ) : data.logs && data.logs.length > 0 ? (
               data.logs.map((log) => (
                 <div key={log.id ?? log.waktu} className="text-sm border-b border-slate-100 pb-2 last:border-b-0">
                   <p className="font-medium truncate text-slate-700">{log.pesan}</p>
@@ -136,9 +139,9 @@ export function DashboardPage() {
           Kartu Saldo Rendah
         </h2>
         <div>
-          {loading ? (
+          {loading || !data ? (
             <Skeleton className="h-8 w-full" />
-          ) : data?.lowBalance && data.lowBalance.length > 0 ? (
+          ) : data.lowBalance && data.lowBalance.length > 0 ? (
             data.lowBalance.map((card, index) => (
               <div key={index} className="flex justify-between items-center p-2 rounded-lg hover:bg-amber-50">
                 <span className="text-slate-600">Kartu <strong>{card.nomor}</strong></span>

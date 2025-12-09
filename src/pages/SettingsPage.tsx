@@ -13,8 +13,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { AppLayout } from '@/components/layout/AppLayout';
 const settingsSchema = z.object({
   max_per_hari: z.coerce.number().int().min(0, "Tidak boleh negatif"),
-  min_saldo: z.string().transform(val => parseInt(val.replace(/\D/g, ''), 10)),
-  max_saldo: z.string().transform(val => parseInt(val.replace(/\D/g, ''), 10)),
+  min_saldo: z.string(),
+  max_saldo: z.string(),
 });
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 const formatCurrency = (value: number | string) => {
@@ -25,7 +25,7 @@ const formatCurrency = (value: number | string) => {
 export function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const form = useForm<SettingsFormValues>({
-    resolver: zodResolver(settingsSchema),
+    resolver: zodResolver(settingsSchema) as any,
     defaultValues: {
       max_per_hari: 0,
       min_saldo: '0',
@@ -52,9 +52,14 @@ export function SettingsPage() {
   }, [form]);
   const onSubmit = async (data: SettingsFormValues) => {
     try {
+      const payload = {
+        max_per_hari: data.max_per_hari,
+        min_saldo: parseInt(String(data.min_saldo).replace(/\D/g, ''), 10) || 0,
+        max_saldo: parseInt(String(data.max_saldo).replace(/\D/g, ''), 10) || 0,
+      };
       await api('/api/settings', {
         method: 'PUT',
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
       toast.success('Pengaturan berhasil disimpan.');
     } catch (error) {
