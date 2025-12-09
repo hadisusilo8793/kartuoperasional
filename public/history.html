@@ -13,7 +13,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800">
     <div class="flex h-screen">
-        <!-- Sidebar -->
+        <!-- Sidebar (same as index.html) -->
         <aside id="sidebar" class="bg-navy text-white w-64 min-h-screen flex flex-col transition-all duration-300">
             <div class="p-4 border-b border-white/10 flex items-center justify-between">
                 <h1 class="text-xl font-bold">KartuOps</h1>
@@ -66,6 +66,7 @@
         </aside>
         <!-- Main Content -->
         <div class="flex-1 flex flex-col">
+            <!-- Header -->
             <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-10">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex items-center justify-between h-16">
@@ -82,47 +83,12 @@
                     </div>
                 </div>
             </header>
+            <!-- Page Content -->
             <main class="flex-1 overflow-y-auto">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12">
                     <div class="card-ui">
-                        <div class="flex flex-wrap gap-4 justify-between items-center mb-6">
-                            <h2 class="text-lg font-semibold">Tabel Riwayat</h2>
-                            <button id="export-csv-btn" class="btn-secondary">
-                                <i data-lucide="download" class="w-4 h-4 mr-2"></i> Export CSV
-                            </button>
-                        </div>
-                        <form id="search-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                            <input type="text" id="kartu-search" placeholder="Cari Kartu/Serial" class="form-input">
-                            <input type="text" id="driver-search" placeholder="Cari Driver/NIK" class="form-input">
-                            <input type="text" id="armada-search" placeholder="Cari Armada/Plat" class="form-input">
-                            <div class="flex gap-2">
-                                <input type="date" id="date-from" class="form-input">
-                                <input type="date" id="date-to" class="form-input">
-                            </div>
-                        </form>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left text-slate-500">
-                                <thead class="text-xs text-slate-700 uppercase bg-slate-50">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3">Tanggal</th>
-                                        <th scope="col" class="px-6 py-3">Armada</th>
-                                        <th scope="col" class="px-6 py-3">Driver</th>
-                                        <th scope="col" class="px-6 py-3">Kartu</th>
-                                        <th scope="col" class="px-6 py-3 text-right">Total Biaya</th>
-                                        <th scope="col" class="px-6 py-3"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="history-table-body">
-                                    <!-- Skeleton Rows -->
-                                    <tr id="skeleton-row" class="animate-pulse">
-                                        <td class="px-6 py-4" colspan="6">
-                                            <div class="h-8 bg-slate-200 rounded"></div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="pagination-controls" class="flex justify-between items-center mt-6"></div>
+                        <h2 class="text-lg font-semibold mb-6">Tabel Riwayat</h2>
+                        <p class="text-center text-slate-500">Fitur ini akan diimplementasikan pada fase berikutnya.</p>
                     </div>
                 </div>
                 <footer class="text-center py-6 text-sm text-slate-500">
@@ -131,10 +97,7 @@
             </main>
         </div>
     </div>
-    <div id="toast-container"></div>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
     <script src="/assets/js/app.js"></script>
-    <script src="/assets/js/pages/history.js"></script>
     <script>
         lucide.createIcons();
         window.app.init();

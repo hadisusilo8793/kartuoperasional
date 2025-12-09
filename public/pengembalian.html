@@ -13,7 +13,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800">
     <div class="flex h-screen">
-        <!-- Sidebar -->
+        <!-- Sidebar (same as index.html) -->
         <aside id="sidebar" class="bg-navy text-white w-64 min-h-screen flex flex-col transition-all duration-300">
             <div class="p-4 border-b border-white/10 flex items-center justify-between">
                 <h1 class="text-xl font-bold">KartuOps</h1>
@@ -66,6 +66,7 @@
         </aside>
         <!-- Main Content -->
         <div class="flex-1 flex flex-col">
+            <!-- Header -->
             <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-10">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex items-center justify-between h-16">
@@ -82,79 +83,12 @@
                     </div>
                 </div>
             </header>
+            <!-- Page Content -->
             <main class="flex-1 overflow-y-auto">
                 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12">
                     <div class="card-ui">
                         <h2 class="text-lg font-semibold mb-6">Form Pengembalian</h2>
-                        <div id="form-skeleton" class="space-y-6">
-                            <div class="h-10 bg-slate-200 rounded-lg animate-pulse"></div>
-                            <div class="h-40 bg-slate-200 rounded-lg animate-pulse"></div>
-                            <div class="h-40 bg-slate-200 rounded-lg animate-pulse"></div>
-                        </div>
-                        <form id="pengembalianForm" class="hidden space-y-8">
-                            <div>
-                                <label for="pinjaman-aktif" class="form-label">Pilih Transaksi Pinjaman</label>
-                                <select id="pinjaman-aktif" name="pinjaman-aktif" class="form-input" required></select>
-                            </div>
-                            <div id="detail-section" class="hidden space-y-8">
-                                <!-- Gate Section -->
-                                <div class="space-y-4">
-                                    <div class="flex justify-between items-center">
-                                        <h3 class="font-semibold">Rincian Biaya Tol</h3>
-                                        <button type="button" id="add-gate-row" class="btn-secondary-sm">
-                                            <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Tambah Gate
-                                        </button>
-                                    </div>
-                                    <div id="gate-rows-container" class="space-y-3"></div>
-                                </div>
-                                <!-- Parkir Section -->
-                                <div class="space-y-4">
-                                    <div class="flex justify-between items-center">
-                                        <h3 class="font-semibold">Rincian Biaya Parkir</h3>
-                                        <button type="button" id="add-parkir-row" class="btn-secondary-sm">
-                                            <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Tambah Parkir
-                                        </button>
-                                    </div>
-                                    <div id="parkir-rows-container" class="space-y-3"></div>
-                                </div>
-                                <!-- Summary Section -->
-                                <div class="border-t pt-6 space-y-3">
-                                    <div class="flex justify-between items-center text-lg">
-                                        <span class="text-slate-600">Total Tol:</span>
-                                        <span id="total-tol" class="font-bold">Rp 0</span>
-                                    </div>
-                                    <div class="flex justify-between items-center text-lg">
-                                        <span class="text-slate-600">Total Parkir:</span>
-                                        <span id="total-parkir" class="font-bold">Rp 0</span>
-                                    </div>
-                                    <div class="flex justify-between items-center text-2xl">
-                                        <span class="text-slate-800">Total Biaya:</span>
-                                        <span id="total-biaya" class="font-bold text-cyan-600">Rp 0</span>
-                                    </div>
-                                    <div class="flex justify-between items-center text-lg mt-4 border-t pt-4">
-                                        <span class="text-slate-600">Saldo Akhir Kartu:</span>
-                                        <span id="saldo-akhir" class="font-bold text-green-600">Rp 0</span>
-                                    </div>
-                                </div>
-                                <!-- Kondisi & Deskripsi -->
-                                <div class="space-y-4">
-                                    <div>
-                                        <label for="kondisi" class="form-label">Kondisi Armada</label>
-                                        <input type="text" id="kondisi" name="kondisi" class="form-input" placeholder="e.g., Baik, Baret di sisi kiri">
-                                    </div>
-                                    <div>
-                                        <label for="deskripsi" class="form-label">Deskripsi Tambahan</label>
-                                        <textarea id="deskripsi" name="deskripsi" rows="3" class="form-input"></textarea>
-                                    </div>
-                                </div>
-                                <div class="flex justify-end">
-                                    <button type="submit" id="submitBtn" class="btn-primary">
-                                        <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i>
-                                        Konfirmasi Pengembalian
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
+                        <p class="text-center text-slate-500">Fitur ini akan diimplementasikan pada fase berikutnya.</p>
                     </div>
                 </div>
                 <footer class="text-center py-6 text-sm text-slate-500">
@@ -163,20 +97,6 @@
             </main>
         </div>
     </div>
-    <!-- Confirmation Modal -->
-    <div id="confirmation-modal" class="hidden">
-        <div class="modal-backdrop"></div>
-        <div class="modal-content card-ui w-full max-w-lg">
-            <h2 class="text-xl font-bold mb-4">Konfirmasi Data</h2>
-            <p class="mb-6 text-slate-600">Apakah Anda yakin data yang dimasukkan sudah benar?</p>
-            <div id="modal-summary" class="space-y-2 mb-6 text-sm"></div>
-            <div class="flex justify-end gap-4">
-                <button id="cancel-modal-btn" type="button" class="btn-secondary">Batal</button>
-                <button id="confirm-modal-btn" type="button" class="btn-primary">Ya, Simpan</button>
-            </div>
-        </div>
-    </div>
-    <div id="toast-container"></div>
     <script src="/assets/js/app.js"></script>
     <script src="/assets/js/pages/pengembalian.js"></script>
     <script>

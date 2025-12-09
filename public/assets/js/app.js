@@ -6,7 +6,7 @@
         saveToken: (token) => localStorage.setItem(TOKEN_KEY, token),
         logout: () => {
             localStorage.removeItem(TOKEN_KEY);
-            window.location.href = '/login';
+            window.location.href = '/login.html';
         },
         login: async (username, password) => {
             const response = await fetch('/api/auth', {
@@ -32,7 +32,7 @@
                 headers['Authorization'] = `Bearer ${token}`;
             }
             const response = await fetch(url, { ...options, headers });
-            if (response.status === 401 && window.location.pathname !== '/login') {
+            if (response.status === 401) {
                 auth.logout();
                 throw new Error('Sesi Anda telah berakhir. Silakan login kembali.');
             }
@@ -61,30 +61,22 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         },
-        antiDoubleClick: async (button, action) => {
-            if (button.disabled) return;
-            button.disabled = true;
-            const originalContent = button.innerHTML;
-            button.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" role="status" aria-label="loading"></span>`;
-            // Disable form elements if inside a form
-            const form = button.closest('form');
-            const formElements = form ? form.querySelectorAll('input, select, button, textarea') : [];
-            formElements.forEach(el => el.disabled = true);
-            try {
-                await action();
-            } finally {
-                button.disabled = false;
-                button.innerHTML = originalContent;
-                formElements.forEach(el => el.disabled = false);
-            }
-        },
-        debounce: (func, delay) => {
-            let timeout;
-            return function(...args) {
-                const context = this;
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(context, args), delay);
-            };
+        antiDoubleClick: (button, action) => {
+            let isSubmitting = false;
+            button.addEventListener('click', async (e) => {
+                if (isSubmitting) return;
+                isSubmitting = true;
+                button.disabled = true;
+                const originalText = button.innerHTML;
+                button.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" role="status" aria-label="loading"></span>`;
+                try {
+                    await action(e);
+                } finally {
+                    isSubmitting = false;
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                }
+            });
         }
     };
     function initSidebar() {
@@ -92,23 +84,25 @@
         const toggleClose = document.getElementById('sidebar-toggle-close');
         const toggleOpen = document.getElementById('sidebar-toggle-open');
         const collapseSidebar = () => {
-            if (!sidebar) return;
             sidebar.classList.add('w-20');
             sidebar.classList.remove('w-64');
             document.querySelectorAll('.sidebar-text').forEach(el => el.classList.add('hidden'));
         };
         const expandSidebar = () => {
-            if (!sidebar) return;
             sidebar.classList.remove('w-20');
             sidebar.classList.add('w-64');
             document.querySelectorAll('.sidebar-text').forEach(el => el.classList.remove('hidden'));
         };
-        if (toggleClose) toggleClose.addEventListener('click', collapseSidebar);
-        if (toggleOpen) toggleOpen.addEventListener('click', expandSidebar);
+        if (toggleClose) {
+            toggleClose.addEventListener('click', collapseSidebar);
+        }
+        if (toggleOpen) {
+            toggleOpen.addEventListener('click', expandSidebar);
+        }
     }
     function initAuthCheck() {
-        if (window.location.pathname !== '/login' && !auth.getToken()) {
-            window.location.href = '/login';
+        if (window.location.pathname !== '/login.html' && !auth.getToken()) {
+            window.location.href = '/login.html';
         }
     }
     function initLogout() {
