@@ -3,18 +3,21 @@ const app = new Hono();
 app.get('/', async (c) => {
     const { D1 } = c.env;
     // Fallback for environments where D1 is not bound (e.g., preview)
-    if (!D1) {
-        return c.json({
-            success: true,
-            data: [],
-            pagination: {
-                page: 1,
-                limit: 10,
-                total: 0,
-                totalPages: 0
-            }
-        });
-    }
+    // Also guard if the D1 binding exists but does not expose expected methods
+        if (!D1 || typeof D1.prepare !== 'function' || typeof D1.batch !== 'function') {
+            // D1 binding is not available in this environment (e.g., Pages preview).
+            // Return an explicit empty successful response with HTTP 200.
+            return c.json({
+                success: true,
+                data: [],
+                pagination: {
+                    page: 1,
+                    limit: 10,
+                    total: 0,
+                    totalPages: 0
+                }
+            }, 200);
+        }
     try {
         const {
             page = 1,
