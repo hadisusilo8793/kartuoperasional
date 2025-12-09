@@ -1,7 +1,7 @@
 import '@/index.css';
 import '@/lib/errorReporter';
 import { enableMapSet } from "immer";
-import React, { StrictMode } from 'react';
+import React, { StrictMode, ErrorInfo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, Link } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -55,17 +55,20 @@ createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary
-        onError={(error) => {
-          console.error("Global Error Boundary Caught:", error);
+        onError={(error, errorInfo) => {
+          console.error("Global Error Boundary Caught:", error, errorInfo);
           toast.error(`An unexpected error occurred: ${error.message}`);
         }}
-        fallback={
+        fallback={(error, errorInfo, retry) => (
           <div className="min-h-screen flex flex-col items-center justify-center bg-slate-100 text-center p-4">
             <h1 className="text-2xl font-bold text-red-600">Application Error</h1>
-            <p className="text-slate-600 mt-2">Something went wrong. Please try refreshing the page.</p>
-            <Button onClick={() => window.location.reload()} className="mt-6">Refresh Page</Button>
+            <p className="text-slate-600 mt-2">Something went wrong: {error.message}</p>
+            <div className="flex gap-2 mt-6">
+              <Button onClick={retry} variant="outline">Retry</Button>
+              <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+            </div>
           </div>
-        }
+        )}
       >
         <Toaster richColors position="top-center" />
         <RouterProvider router={router} />
@@ -73,3 +76,4 @@ createRoot(rootElement).render(
     </QueryClientProvider>
   </StrictMode>
 );
+export { NotFoundPage };

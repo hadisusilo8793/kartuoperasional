@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { AppLayout } from '@/components/layout/AppLayout';
+import { motion, AnimatePresence } from 'framer-motion';
 const formatCurrency = (value: number | string) => {
   const num = typeof value === 'string' ? parseInt(value.replace(/\D/g, ''), 10) : value;
   if (isNaN(num)) return '0';
@@ -44,6 +45,7 @@ export function PengembalianPage() {
   const [pinjamanAktif, setPinjamanAktif] = useState<PinjamanAktif[]>([]);
   const [gates, setGates] = useState<Gate[]>([]);
   const [selectedPinjaman, setSelectedPinjaman] = useState<PinjamanAktif | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const form = useForm<PengembalianFormValues>({
     resolver: zodResolver(pengembalianSchema),
     defaultValues: {
@@ -140,54 +142,51 @@ export function PengembalianPage() {
                     )}
                   />
                   {selectedPinjaman && (
-                    <div className="space-y-8 animate-fade-in">
-                      {/* Gate Section */}
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                       <div className="space-y-4">
                         <div className="flex justify-between items-center">
                           <h3 className="font-semibold">Rincian Biaya Tol</h3>
                           <Button type="button" variant="outline" size="sm" onClick={() => appendGate({ gate_id: '', biaya: '0' })}><Plus className="w-4 h-4 mr-1" /> Tambah Gate</Button>
                         </div>
-                        {gateFields.map((field, index) => (
-                          <div key={field.id} className="flex items-start gap-2">
-                            <FormField control={form.control} name={`gate_in_out.${index}.gate_id`} render={({ field }) => (
-                              <FormItem className="flex-grow"><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Pilih Gate" /></SelectTrigger></FormControl><SelectContent>{gates.map(g => <SelectItem key={g.id} value={g.id.toString()}>{g.nama}</SelectItem>)}</SelectContent></Select></FormItem>
-                            )} />
-                            <FormField control={form.control} name={`gate_in_out.${index}.biaya`} render={({ field }) => (
-                              <FormItem className="w-40"><FormControl><Input {...field} onChange={e => field.onChange(formatCurrency(e.target.value))} className="text-right" /></FormControl></FormItem>
-                            )} />
-                            <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={() => removeGate(index)}><Trash2 className="w-4 h-4" /></Button>
-                          </div>
-                        ))}
+                        <AnimatePresence>
+                          {gateFields.map((field, index) => (
+                            <motion.div key={field.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="flex items-start gap-2">
+                              <FormField control={form.control} name={`gate_in_out.${index}.gate_id`} render={({ field }) => (<FormItem className="flex-grow"><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Pilih Gate" /></SelectTrigger></FormControl><SelectContent>{gates.map(g => <SelectItem key={g.id} value={g.id.toString()}>{g.nama}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                              <FormField control={form.control} name={`gate_in_out.${index}.biaya`} render={({ field }) => (<FormItem className="w-40"><FormControl><Input {...field} onChange={e => field.onChange(formatCurrency(e.target.value))} className="text-right" /></FormControl></FormItem>)} />
+                              <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:scale-110 transition-transform duration-150" onClick={() => removeGate(index)}><Trash2 className="w-4 h-4" /></Button>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
                       </div>
-                      {/* Parkir Section */}
                       <div className="space-y-4">
                         <div className="flex justify-between items-center">
                           <h3 className="font-semibold">Rincian Biaya Parkir</h3>
                           <Button type="button" variant="outline" size="sm" onClick={() => appendParkir({ lokasi: '', biaya: '0' })}><Plus className="w-4 h-4 mr-1" /> Tambah Parkir</Button>
                         </div>
-                        {parkirFields.map((field, index) => (
-                          <div key={field.id} className="flex items-start gap-2">
-                            <FormField control={form.control} name={`parkir.${index}.lokasi`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder="Lokasi Parkir" {...field} /></FormControl></FormItem>)} />
-                            <FormField control={form.control} name={`parkir.${index}.biaya`} render={({ field }) => (<FormItem className="w-40"><FormControl><Input {...field} onChange={e => field.onChange(formatCurrency(e.target.value))} className="text-right" /></FormControl></FormItem>)} />
-                            <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={() => removeParkir(index)}><Trash2 className="w-4 h-4" /></Button>
-                          </div>
-                        ))}
+                        <AnimatePresence>
+                          {parkirFields.map((field, index) => (
+                            <motion.div key={field.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="flex items-start gap-2">
+                              <FormField control={form.control} name={`parkir.${index}.lokasi`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder="Lokasi Parkir" {...field} /></FormControl></FormItem>)} />
+                              <FormField control={form.control} name={`parkir.${index}.biaya`} render={({ field }) => (<FormItem className="w-40"><FormControl><Input {...field} onChange={e => field.onChange(formatCurrency(e.target.value))} className="text-right" /></FormControl></FormItem>)} />
+                              <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:scale-110 transition-transform duration-150" onClick={() => removeParkir(index)}><Trash2 className="w-4 h-4" /></Button>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
                       </div>
-                      {/* Summary & Others */}
                       <div className="border-t pt-6 space-y-3">
-                        <div className="flex justify-between items-center text-lg"><span className="text-muted-foreground">Total Tol:</span><span className="font-bold">Rp {formatCurrency(totalTol)}</span></div>
-                        <div className="flex justify-between items-center text-lg"><span className="text-muted-foreground">Total Parkir:</span><span className="font-bold">Rp {formatCurrency(totalParkir)}</span></div>
-                        <div className="flex justify-between items-center text-2xl"><span className="text-foreground">Total Biaya:</span><span className="font-bold text-cyan-600">Rp {formatCurrency(totalBiaya)}</span></div>
-                        <div className="flex justify-between items-center text-lg mt-4 border-t pt-4"><span className="text-muted-foreground">Saldo Akhir Kartu:</span><span className="font-bold text-green-600">Rp {formatCurrency(saldoAkhir)}</span></div>
+                        <div className="flex justify-between items-center text-lg"><span className="text-muted-foreground">Total Tol:</span><motion.span key={`tol-${totalTol}`} initial={{ y: -5, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="font-bold">Rp {formatCurrency(totalTol)}</motion.span></div>
+                        <div className="flex justify-between items-center text-lg"><span className="text-muted-foreground">Total Parkir:</span><motion.span key={`parkir-${totalParkir}`} initial={{ y: -5, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="font-bold">Rp {formatCurrency(totalParkir)}</motion.span></div>
+                        <div className="flex justify-between items-center text-2xl"><span className="text-foreground">Total Biaya:</span><motion.span key={`biaya-${totalBiaya}`} initial={{ y: -5, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="font-bold text-cyan-600">Rp {formatCurrency(totalBiaya)}</motion.span></div>
+                        <div className="flex justify-between items-center text-lg mt-4 border-t pt-4"><span className="text-muted-foreground">Saldo Akhir Kartu:</span><motion.span key={`akhir-${saldoAkhir}`} initial={{ y: -5, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="font-bold text-green-600">Rp {formatCurrency(saldoAkhir)}</motion.span></div>
                       </div>
                       <div className="space-y-4">
                         <FormField control={form.control} name="kondisi" render={({ field }) => (<FormItem><FormLabel>Kondisi Armada</FormLabel><FormControl><Input placeholder="e.g., Baik, Baret di sisi kiri" {...field} /></FormControl></FormItem>)} />
                         <FormField control={form.control} name="deskripsi" render={({ field }) => (<FormItem><FormLabel>Deskripsi Tambahan</FormLabel><FormControl><Textarea {...field} /></FormControl></FormItem>)} />
                       </div>
                       <div className="flex justify-end">
-                        <AlertDialog>
+                        <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                           <AlertDialogTrigger asChild>
-                            <Button type="button" onClick={() => form.trigger()} disabled={!form.formState.isValid}><CheckCircle className="w-5 h-5 mr-2" /> Konfirmasi Pengembalian</Button>
+                            <Button type="button" onClick={async () => { const isValid = await form.trigger(); if (isValid) setIsModalOpen(true); }}><CheckCircle className="w-5 h-5 mr-2" /> Konfirmasi Pengembalian</Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader><AlertDialogTitle>Konfirmasi Data</AlertDialogTitle><AlertDialogDescription>Apakah Anda yakin data yang dimasukkan sudah benar?</AlertDialogDescription></AlertDialogHeader>
@@ -202,7 +201,7 @@ export function PengembalianPage() {
                           </AlertDialogContent>
                         </AlertDialog>
                       </div>
-                    </div>
+                    </motion.div>
                   )}
                 </form>
               </Form>

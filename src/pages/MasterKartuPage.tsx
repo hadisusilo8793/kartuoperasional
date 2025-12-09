@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, DragEvent } from 'react';
 import { api } from '@/lib/api-client';
 import { Toaster, toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ import { Plus, Upload, Save, X, Edit, Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Papa from 'papaparse';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
 type Kartu = {
   id: number;
   nomor: string;
@@ -113,11 +115,7 @@ export function MasterKartuPage() {
   const handleSelectChange = (name: string, value: string) => {
     setEditFormData({ ...editFormData, [name]: value });
   };
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleFileSelected = (file: File | null) => {
     if (!file) return;
     Papa.parse(file, {
       header: true,
@@ -136,28 +134,28 @@ export function MasterKartuPage() {
         } catch (error) {
           toast.error(error instanceof Error ? `Import gagal: ${error.message}` : 'Import gagal');
         } finally {
-          if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-          }
+          if (fileInputRef.current) fileInputRef.current.value = '';
         }
       },
       error: (error) => {
         toast.error(`Gagal mem-parsing CSV: ${error.message}`);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+        if (fileInputRef.current) fileInputRef.current.value = '';
       },
     });
+  };
+  const handleFileDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    handleFileSelected(e.dataTransfer.files[0]);
   };
   const renderRow = (kartu: Kartu) => {
     const isEditing = editingId === kartu.id;
     const isDipinjam = kartu.status_pinjam === 'DIPINJAM';
     if (isEditing) {
       return (
-        <TableRow key={kartu.id} className="bg-slate-50 hover:bg-accent/50 transition-colors">
-          <TableCell><Input name="nomor" value={editFormData.nomor} onChange={handleInputChange} disabled={isDipinjam} className="uppercase-input" /></TableCell>
-          <TableCell><Input name="serial" value={editFormData.serial} onChange={handleInputChange} disabled={isDipinjam} className="uppercase-input" /></TableCell>
-          <TableCell><Input name="jenis" value={editFormData.jenis} onChange={handleInputChange} disabled={isDipinjam} className="uppercase-input" /></TableCell>
+        <motion.tr key={kartu.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-50">
+          <TableCell><Input name="nomor" value={editFormData.nomor} onChange={handleInputChange} disabled={isDipinjam} className="uppercase-input disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-100" /></TableCell>
+          <TableCell><Input name="serial" value={editFormData.serial} onChange={handleInputChange} disabled={isDipinjam} className="uppercase-input disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-100" /></TableCell>
+          <TableCell><Input name="jenis" value={editFormData.jenis} onChange={handleInputChange} disabled={isDipinjam} className="uppercase-input disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-100" /></TableCell>
           <TableCell>
             <Select name="status" value={editFormData.status} onValueChange={(v) => handleSelectChange('status', v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -166,18 +164,18 @@ export function MasterKartuPage() {
           </TableCell>
           <TableCell>
             <Select name="status_pinjam" value={editFormData.status_pinjam} onValueChange={(v) => handleSelectChange('status_pinjam', v)} disabled={isDipinjam}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className="disabled:opacity-50 disabled:cursor-not-allowed"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="TERSEDIA">TERSEDIA</SelectItem><SelectItem value="DIPINJAM">DIPINJAM</SelectItem></SelectContent>
             </Select>
           </TableCell>
           <TableCell><Input name="saldo" value={editFormData.saldo?.toString()} onChange={handleInputChange} className="text-right" /></TableCell>
           <TableCell className="text-center">
             <div className="flex justify-center gap-2">
-              <Button size="icon" variant="ghost" onClick={handleSave} className="text-green-600 hover:text-green-700"><Save className="w-4 h-4" /></Button>
-              <Button size="icon" variant="ghost" onClick={handleCancel} className="text-red-600 hover:text-red-700"><X className="w-4 h-4" /></Button>
+              <Button size="icon" variant="ghost" onClick={handleSave} className="text-green-600 hover:text-green-700 hover:scale-105 transition-transform"><Save className="w-4 h-4" /></Button>
+              <Button size="icon" variant="ghost" onClick={handleCancel} className="text-red-600 hover:text-red-700 hover:scale-105 transition-transform"><X className="w-4 h-4" /></Button>
             </div>
           </TableCell>
-        </TableRow>
+        </motion.tr>
       );
     }
     return (
@@ -190,10 +188,10 @@ export function MasterKartuPage() {
         <TableCell className="text-right font-medium">Rp {formatCurrency(kartu.saldo)}</TableCell>
         <TableCell className="text-center">
           <div className="flex justify-center gap-2">
-            <Button size="icon" variant="ghost" onClick={() => handleEdit(kartu)} className="text-cyan-600 hover:text-cyan-800"><Edit className="w-4 h-4" /></Button>
+            <Button size="icon" variant="ghost" onClick={() => handleEdit(kartu)} className="text-cyan-600 hover:text-cyan-800 hover:scale-105 transition-transform"><Edit className="w-4 h-4" /></Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="icon" variant="ghost" className="text-red-600 hover:text-red-800" disabled={isDipinjam}><Trash2 className="w-4 h-4" /></Button>
+                <Button size="icon" variant="ghost" className="text-red-600 hover:text-red-800 hover:scale-105 transition-transform" disabled={isDipinjam}><Trash2 className="w-4 h-4" /></Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader><AlertDialogTitle>Anda yakin?</AlertDialogTitle><AlertDialogDescription>Tindakan ini tidak dapat dibatalkan. Ini akan menghapus data kartu secara permanen.</AlertDialogDescription></AlertDialogHeader>
@@ -214,15 +212,26 @@ export function MasterKartuPage() {
       <Card className="rounded-[18px] shadow-soft">
         <CardHeader>
           <div className="flex flex-wrap gap-4 justify-between items-center">
-            <CardTitle>Data Kartu</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle>Data Kartu</CardTitle>
+              {!loading && <Badge variant="secondary">{kartuList.length} kartu</Badge>}
+            </div>
             <div>
-              <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileImport} />
-              <Button variant="outline" onClick={handleImportClick} className="mr-2"><Upload className="w-4 h-4 mr-2" /> Import CSV</Button>
+              <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={(e) => handleFileSelected(e.target.files?.[0] || null)} />
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="mr-2"><Upload className="w-4 h-4 mr-2" /> Import CSV</Button>
               <Button onClick={handleAddNew}><Plus className="w-4 h-4 mr-2" /> Tambah Kartu</Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
+          <div
+            className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center cursor-pointer hover:border-cyan-500 transition-colors mb-6"
+            onDrop={handleFileDrop}
+            onDragOver={(e) => e.preventDefault()}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            Tarik & lepas file CSV di sini, atau <span className="text-cyan-600 font-semibold">klik untuk memilih file</span>.
+          </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -239,14 +248,12 @@ export function MasterKartuPage() {
               <TableBody>
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell colSpan={7}><Skeleton className="h-8 w-full" /></TableCell>
-                    </TableRow>
+                    <TableRow key={i}><TableCell colSpan={7}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
                   ))
                 ) : (
                   <>
                     {editingId === 'new' && (
-                      <TableRow className="bg-slate-50 hover:bg-accent/50 transition-colors">
+                      <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-50">
                         <TableCell><Input name="nomor" value={editFormData.nomor} onChange={handleInputChange} className="uppercase-input" /></TableCell>
                         <TableCell><Input name="serial" value={editFormData.serial} onChange={handleInputChange} className="uppercase-input" /></TableCell>
                         <TableCell><Input name="jenis" value={editFormData.jenis} onChange={handleInputChange} className="uppercase-input" /></TableCell>
@@ -265,18 +272,18 @@ export function MasterKartuPage() {
                         <TableCell><Input name="saldo" value={editFormData.saldo?.toString()} onChange={handleInputChange} className="text-right" /></TableCell>
                         <TableCell className="text-center">
                           <div className="flex justify-center gap-2">
-                            <Button size="icon" variant="ghost" onClick={handleSave} className="text-green-600 hover:text-green-700"><Save className="w-4 h-4" /></Button>
-                            <Button size="icon" variant="ghost" onClick={handleCancel} className="text-red-600 hover:text-red-700"><X className="w-4 h-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={handleSave} className="text-green-600 hover:text-green-700 hover:scale-105 transition-transform"><Save className="w-4 h-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={handleCancel} className="text-red-600 hover:text-red-700 hover:scale-105 transition-transform"><X className="w-4 h-4" /></Button>
                           </div>
                         </TableCell>
-                      </TableRow>
+                      </motion.tr>
                     )}
                     {kartuList.length > 0 ? kartuList.map(renderRow) : (
                       <TableRow>
                         <TableCell colSpan={7} className="h-48 text-center">
                           <div className="flex flex-col items-center gap-4">
                             <p className="text-muted-foreground">Belum ada kartu. Klik untuk menambahkan!</p>
-                            <Button onClick={handleAddNew} variant="outline"><Plus className="w-4 h-4 mr-2"/> Tambah Kartu Pertama</Button>
+                            <motion.div whileHover={{ scale: 1.05 }}><Button onClick={handleAddNew} variant="outline"><Plus className="w-4 h-4 mr-2"/> Tambah Kartu Pertama</Button></motion.div>
                           </div>
                         </TableCell>
                       </TableRow>

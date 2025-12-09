@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api-client';
 import { Toaster, toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CreditCard, UserSquare, Truck, ArrowRightLeft, AlertTriangle } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 type DashboardStats = {
   kartuAktif: number;
   driverAktif: number;
@@ -30,15 +32,17 @@ type DashboardData = {
   chartData: { tol: number; parkir: number };
 };
 const StatCard = ({ icon, title, value }: { icon: React.ReactNode; title: string; value: number | string }) => (
-  <Card className="rounded-[18px] shadow-soft hover:shadow-md transition-transform duration-200 hover:-translate-y-0.5">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-      <div className="text-cyan-600">{icon}</div>
-    </CardHeader>
-    <CardContent>
-      <div className="text-3xl font-bold">{value}</div>
-    </CardContent>
-  </Card>
+  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+    <Card className="rounded-[18px] shadow-soft hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+        <div className="text-cyan-600">{icon}</div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold">{value}</div>
+      </CardContent>
+    </Card>
+  </motion.div>
 );
 const StatCardSkeleton = () => <Skeleton className="h-[108px] rounded-[18px]" />;
 export function DashboardPage() {
@@ -53,7 +57,7 @@ export function DashboardPage() {
         setData(dashboardData);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to load dashboard data';
-        if (errorMessage === 'Unauthorized') {
+        if (errorMessage.includes('Unauthorized')) {
           localStorage.removeItem('authToken');
           navigate('/login');
           return;
@@ -93,68 +97,75 @@ export function DashboardPage() {
         )}
       </div>
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="lg:col-span-2 rounded-[18px] shadow-soft p-6">
-          <h2 className="text-lg font-semibold mb-4">Biaya Tol vs Parkir</h2>
-          <div className="h-80">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <Card className="lg:col-span-2 rounded-[18px] shadow-soft p-6 h-full">
+            <h2 className="text-lg font-semibold mb-4">Biaya Tol vs Parkir</h2>
+            <div className="h-80">
+              {loading ? (
+                <Skeleton className="w-full h-full" />
+              ) : !data || (chartData[0].value === 0 && chartData[1].value === 0) ? (
+                <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                  <p>Belum ada data transaksi.</p>
+                  <Button asChild variant="link" size="sm"><Link to="/transaksi">Mulai Peminjaman!</Link></Button>
+                </motion.div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </Card>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <Card className="rounded-[18px] shadow-soft p-6 h-full">
+            <h2 className="text-lg font-semibold mb-4">Log Terbaru</h2>
+            <div className="space-y-3">
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)
+              ) : !data || data.logs.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-10">Log pertama akan muncul setelah ada aktivitas.</p>
+              ) : (
+                data.logs.map((log, index) => (
+                  <div key={log.id ?? index} className="text-sm border-b border-slate-100 pb-2 last:border-b-0">
+                    <p className="font-medium truncate text-slate-700">{log.pesan}</p>
+                    <p className="text-xs text-slate-400">{new Date(log.waktu).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+        <Card className="mt-8 rounded-[18px] shadow-soft p-6">
+          <h2 className="text-lg font-semibold mb-4 text-amber-600 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" />
+            Kartu Saldo Rendah
+          </h2>
+          <div>
             {loading ? (
-              <Skeleton className="w-full h-full" />
-            ) : !data || (chartData[0].value === 0 && chartData[1].value === 0) ? (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                Belum ada data transaksi untuk ditampilkan.
-              </div>
+              <Skeleton className="h-8 w-full" />
+            ) : !data || data.lowBalance.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Semua kartu memiliki saldo yang cukup.</p>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </Card>
-        <Card className="rounded-[18px] shadow-soft p-6">
-          <h2 className="text-lg font-semibold mb-4">Log Terbaru</h2>
-          <div className="space-y-3">
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)
-            ) : !data || data.logs.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-10">Log pertama akan muncul setelah ada aktivitas.</p>
-            ) : (
-              data.logs.map((log, index) => (
-                <div key={log.id ?? index} className="text-sm border-b border-slate-100 pb-2 last:border-b-0">
-                  <p className="font-medium truncate text-slate-700">{log.pesan}</p>
-                  <p className="text-xs text-slate-400">{new Date(log.waktu).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</p>
+              data.lowBalance.map((card, index) => (
+                <div key={index} className="flex justify-between items-center p-2 rounded-lg hover:bg-amber-50">
+                  <span className="text-slate-600">Kartu <strong>{card.nomor}</strong></span>
+                  <span className="font-semibold text-amber-700">{formatCurrency(card.saldo)}</span>
                 </div>
               ))
             )}
           </div>
         </Card>
-      </div>
-      <Card className="mt-8 rounded-[18px] shadow-soft p-6">
-        <h2 className="text-lg font-semibold mb-4 text-amber-600 flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5" />
-          Kartu Saldo Rendah
-        </h2>
-        <div>
-          {loading ? (
-            <Skeleton className="h-8 w-full" />
-          ) : !data || data.lowBalance.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Semua kartu memiliki saldo yang cukup.</p>
-          ) : (
-            data.lowBalance.map((card, index) => (
-              <div key={index} className="flex justify-between items-center p-2 rounded-lg hover:bg-amber-50">
-                <span className="text-slate-600">Kartu <strong>{card.nomor}</strong></span>
-                <span className="font-semibold text-amber-700">{formatCurrency(card.saldo)}</span>
-              </div>
-            ))
-          )}
-        </div>
-      </Card>
+      </motion.div>
     </AppLayout>
   );
 }

@@ -13,6 +13,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import Papa from 'papaparse';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useDebounce } from 'react-use';
+import { motion, AnimatePresence } from 'framer-motion';
 type Transaksi = {
   id: number;
   waktu_pinjam: string;
@@ -98,28 +99,33 @@ export function HistoryPage() {
       toast.info('Tidak ada data untuk diekspor.');
       return;
     }
-    const csvData = data.map(item => ({
-      "Tanggal": formatDate(item.waktu_pinjam),
-      "No Armada": item.nomor_armada,
-      "Plat": item.plat,
-      "Nama Driver": item.nama_driver,
-      "NIK": item.nik,
-      "No Kartu": item.nomor_kartu,
-      "Serial Kartu": item.serial_kartu,
-      "Biaya Tol": item.total_tol,
-      "Biaya Parkir": item.total_parkir,
-      "Total Biaya": item.total_biaya,
-    }));
-    const csv = Papa.unparse(csvData);
-    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `riwayat_transaksi_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('Ekspor CSV berhasil.');
+    const toastId = toast.loading('Mengekspor data...');
+    try {
+      const csvData = data.map(item => ({
+        "Tanggal": formatDate(item.waktu_pinjam),
+        "No Armada": item.nomor_armada,
+        "Plat": item.plat,
+        "Nama Driver": item.nama_driver,
+        "NIK": item.nik,
+        "No Kartu": item.nomor_kartu,
+        "Serial Kartu": item.serial_kartu,
+        "Biaya Tol": item.total_tol,
+        "Biaya Parkir": item.total_parkir,
+        "Total Biaya": item.total_biaya,
+      }));
+      const csv = Papa.unparse(csvData);
+      const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `riwayat_transaksi_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Ekspor CSV berhasil.', { id: toastId });
+    } catch (error) {
+      toast.error('Ekspor gagal.', { id: toastId });
+    }
   };
   return (
     <AppLayout pageTitle="Riwayat Transaksi">
@@ -164,20 +170,24 @@ export function HistoryPage() {
                     <TableCell colSpan={5} className="h-48 text-center">
                       <div className="flex flex-col items-center gap-4">
                         <p className="text-muted-foreground">Belum ada transaksi. Buat yang pertama!</p>
-                        <Button asChild variant="outline"><Link to="/transaksi">Mulai Peminjaman</Link></Button>
+                        <motion.div whileHover={{ scale: 1.05 }} transition={{ type: 'spring', stiffness: 300 }}>
+                          <Button asChild variant="outline"><Link to="/transaksi">Mulai Peminjaman</Link></Button>
+                        </motion.div>
                       </div>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  data.map(item => (
-                    <TableRow key={item.id} className="hover:bg-accent/50 transition-colors">
-                      <TableCell>{formatDate(item.waktu_pinjam)}</TableCell>
-                      <TableCell>{item.nomor_armada} ({item.plat})</TableCell>
-                      <TableCell>{item.nama_driver}</TableCell>
-                      <TableCell>{item.nomor_kartu}</TableCell>
-                      <TableCell className="text-right font-semibold">{formatCurrency(item.total_biaya)}</TableCell>
-                    </TableRow>
-                  ))
+                  <AnimatePresence>
+                    {data.map((item, index) => (
+                      <motion.tr key={item.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="hover:bg-accent/50">
+                        <TableCell>{formatDate(item.waktu_pinjam)}</TableCell>
+                        <TableCell>{item.nomor_armada} ({item.plat})</TableCell>
+                        <TableCell>{item.nama_driver}</TableCell>
+                        <TableCell>{item.nomor_kartu}</TableCell>
+                        <TableCell className="text-right font-semibold">{formatCurrency(item.total_biaya)}</TableCell>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
                 )}
               </TableBody>
             </Table>
@@ -190,11 +200,11 @@ export function HistoryPage() {
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
-                    <PaginationPrevious onClick={() => handlePageChange(pagination.page - 1)} className={pagination.page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                    <PaginationPrevious onClick={() => handlePageChange(pagination.page - 1)} className={pagination.page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:scale-105 transition-transform duration-150'} />
                   </PaginationItem>
                   <PaginationItem><PaginationLink>{pagination.page}</PaginationLink></PaginationItem>
                   <PaginationItem>
-                    <PaginationNext onClick={() => handlePageChange(pagination.page + 1)} className={pagination.page >= pagination.totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                    <PaginationNext onClick={() => handlePageChange(pagination.page + 1)} className={pagination.page >= pagination.totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:scale-105 transition-transform duration-150'} />
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>
