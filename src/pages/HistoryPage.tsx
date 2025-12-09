@@ -102,7 +102,7 @@ export function HistoryPage() {
       if (res.status === 401) {
         // Unauthorized: remove token and redirect to login (client-side only)
         if (typeof window !== 'undefined') {
-          try { localStorage.removeItem('authToken'); } catch {}
+          try { localStorage.removeItem('authToken'); } catch (e) { /* ignore */ }
           window.location.href = '/login';
         }
         throw new Error('Unauthorized');
