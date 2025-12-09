@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { api } from '@/lib/api-client';
@@ -76,46 +76,9 @@ export function HistoryPage() {
       if (debouncedSearch.armada_search) params.set('armada_search', debouncedSearch.armada_search);
       if (debouncedSearch.date_from) params.set('date_from', debouncedSearch.date_from);
       if (debouncedSearch.date_to) params.set('date_to', debouncedSearch.date_to);
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      // Safely read token (avoid SSR issues)
-      let token: string | null = null;
-      if (typeof window !== 'undefined') {
-        try {
-          token = localStorage.getItem('authToken');
-        } catch {
-          token = null;
-        }
-      }
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const res = await fetch(`/api/history?${params.toString()}`, {
-        method: 'GET',
-        headers,
-      });
-
-      if (res.status === 401) {
-        // Unauthorized: remove token and redirect to login (client-side only)
-        if (typeof window !== 'undefined') {
-          try { localStorage.removeItem('authToken'); } catch (e) { /* ignore */ }
-          window.location.href = '/login';
-        }
-        throw new Error('Unauthorized');
-      }
-
-      const payload = await res.json();
-
-      if (!res.ok) {
-        throw new Error(payload?.message || 'Gagal memuat riwayat.');
-      }
-
-      setData(payload?.data || []);
-      setPagination(payload?.pagination || null);
+      const response = await api<{ data: Transaksi[], pagination: PaginationInfo }>(`/api/history?${params.toString()}`);
+      setData(response.data || []);
+      setPagination(response.pagination || null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Gagal memuat riwayat.');
     } finally {

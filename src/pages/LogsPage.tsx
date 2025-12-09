@@ -27,9 +27,14 @@ export function LogsPage() {
     try {
       setLoading(true);
       const data = await api<Log[]>('/api/logs?limit=200');
-      setLogs(data);
+      if (data && Array.isArray(data)) {
+        setLogs(data);
+      } else {
+        setLogs([]);
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Gagal memuat log.');
+      setLogs([]);
     } finally {
       setLoading(false);
     }
@@ -40,11 +45,15 @@ export function LogsPage() {
   const filteredLogs = useMemo(() => {
     if (!searchTerm) return logs;
     return logs.filter(log =>
-      log.pesan.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.level.toLowerCase().includes(searchTerm.toLowerCase())
+      (log.pesan || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (log.level || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [logs, searchTerm]);
   const copyLogsToClipboard = () => {
+    if (!filteredLogs || filteredLogs.length === 0) {
+      toast.info("Tidak ada log untuk disalin.");
+      return;
+    }
     const logText = filteredLogs.map(log => `[${formatDate(log.waktu)}] [${log.level}] ${log.pesan}`).join('\n');
     navigator.clipboard.writeText(logText)
       .then(() => toast.success('Log disalin ke clipboard.'))
@@ -95,10 +104,10 @@ export function LogsPage() {
                     <TableRow key={i}><TableCell colSpan={3}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
                   ))
                 ) : filteredLogs.length === 0 ? (
-                  <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">Tidak ada log.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={3} className="h-48 text-center text-muted-foreground">Tidak ada log yang cocok.</TableCell></TableRow>
                 ) : (
                   filteredLogs.map(log => (
-                    <TableRow key={log.id} className="hover:bg-accent">
+                    <TableRow key={log.id} className="hover:bg-accent/50 transition-colors">
                       <TableCell className="whitespace-nowrap">{formatDate(log.waktu)}</TableCell>
                       <TableCell>
                         <Badge variant={getLevelVariant(log.level)}>{log.level}</Badge>

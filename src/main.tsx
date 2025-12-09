@@ -3,7 +3,7 @@ import '@/lib/errorReporter';
 import { enableMapSet } from "immer";
 import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Link } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
@@ -18,16 +18,18 @@ import { MasterArmadaPage } from '@/pages/MasterArmadaPage';
 import { MasterGatePage } from '@/pages/MasterGatePage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { LogsPage } from '@/pages/LogsPage';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { Button } from './components/ui/button';
+import { Toaster, toast } from 'sonner';
 enableMapSet();
-// Placeholder for pages that are not yet implemented in React
-export const PlaceholderPage = ({ title }: { title: string }) => (
-  <AppLayout pageTitle={title}>
-    <div className="p-8 text-center">
-      <h1 className="text-2xl font-bold">{title}</h1>
-      <p className="text-muted-foreground mt-2">This page is under construction.</p>
-    </div>
-  </AppLayout>
+const NotFoundPage = () => (
+  <div className="min-h-screen flex flex-col items-center justify-center bg-slate-100 text-center p-4">
+    <h1 className="text-6xl font-bold text-navy">404</h1>
+    <p className="text-xl text-slate-600 mt-4">Page Not Found</p>
+    <p className="text-slate-500 mt-2">The page you are looking for does not exist.</p>
+    <Button asChild className="mt-6">
+      <Link to="/dashboard">Go to Dashboard</Link>
+    </Button>
+  </div>
 );
 const queryClient = new QueryClient();
 const router = createBrowserRouter([
@@ -43,6 +45,7 @@ const router = createBrowserRouter([
   { path: "/master-gate", element: <MasterGatePage />, errorElement: <RouteErrorBoundary /> },
   { path: "/settings", element: <SettingsPage />, errorElement: <RouteErrorBoundary /> },
   { path: "/logs", element: <LogsPage />, errorElement: <RouteErrorBoundary /> },
+  { path: "*", element: <NotFoundPage /> }
 ]);
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -51,7 +54,20 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ErrorBoundary>
+      <ErrorBoundary
+        onError={(error) => {
+          console.error("Global Error Boundary Caught:", error);
+          toast.error(`An unexpected error occurred: ${error.message}`);
+        }}
+        fallback={
+          <div className="min-h-screen flex flex-col items-center justify-center bg-slate-100 text-center p-4">
+            <h1 className="text-2xl font-bold text-red-600">Application Error</h1>
+            <p className="text-slate-600 mt-2">Something went wrong. Please try refreshing the page.</p>
+            <Button onClick={() => window.location.reload()} className="mt-6">Refresh Page</Button>
+          </div>
+        }
+      >
+        <Toaster richColors position="top-center" />
         <RouterProvider router={router} />
       </ErrorBoundary>
     </QueryClientProvider>

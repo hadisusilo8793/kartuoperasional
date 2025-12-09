@@ -154,7 +154,7 @@ export function MasterKartuPage() {
     const isDipinjam = kartu.status_pinjam === 'DIPINJAM';
     if (isEditing) {
       return (
-        <TableRow key={kartu.id} className="bg-slate-50">
+        <TableRow key={kartu.id} className="bg-slate-50 hover:bg-accent/50 transition-colors">
           <TableCell><Input name="nomor" value={editFormData.nomor} onChange={handleInputChange} disabled={isDipinjam} className="uppercase-input" /></TableCell>
           <TableCell><Input name="serial" value={editFormData.serial} onChange={handleInputChange} disabled={isDipinjam} className="uppercase-input" /></TableCell>
           <TableCell><Input name="jenis" value={editFormData.jenis} onChange={handleInputChange} disabled={isDipinjam} className="uppercase-input" /></TableCell>
@@ -246,7 +246,7 @@ export function MasterKartuPage() {
                 ) : (
                   <>
                     {editingId === 'new' && (
-                      <TableRow className="bg-slate-50">
+                      <TableRow className="bg-slate-50 hover:bg-accent/50 transition-colors">
                         <TableCell><Input name="nomor" value={editFormData.nomor} onChange={handleInputChange} className="uppercase-input" /></TableCell>
                         <TableCell><Input name="serial" value={editFormData.serial} onChange={handleInputChange} className="uppercase-input" /></TableCell>
                         <TableCell><Input name="jenis" value={editFormData.jenis} onChange={handleInputChange} className="uppercase-input" /></TableCell>

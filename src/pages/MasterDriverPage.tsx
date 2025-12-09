@@ -123,7 +123,7 @@ export function MasterDriverPage() {
     const isEditing = editingId === driver.id;
     if (isEditing) {
       return (
-        <TableRow key={driver.id} className="bg-slate-50">
+        <TableRow key={driver.id} className="bg-slate-50 hover:bg-accent/50 transition-colors">
           <TableCell><Input name="nik" value={editFormData.nik} onChange={handleInputChange} className="uppercase-input" /></TableCell>
           <TableCell><Input name="nama" value={editFormData.nama} onChange={handleInputChange} /></TableCell>
           <TableCell>
@@ -194,7 +194,7 @@ export function MasterDriverPage() {
                 ) : (
                   <>
                     {editingId === 'new' && (
-                      <TableRow className="bg-slate-50">
+                      <TableRow className="bg-slate-50 hover:bg-accent/50 transition-colors">
                         <TableCell><Input name="nik" value={editFormData.nik} onChange={handleInputChange} className="uppercase-input" /></TableCell>
                         <TableCell><Input name="nama" value={editFormData.nama} onChange={handleInputChange} /></TableCell>
                         <TableCell>

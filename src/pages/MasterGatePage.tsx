@@ -125,7 +125,7 @@ export function MasterGatePage() {
     const isEditing = editingId === gate.id;
     if (isEditing) {
       return (
-        <TableRow key={gate.id} className="bg-slate-50">
+        <TableRow key={gate.id} className="bg-slate-50 hover:bg-accent/50 transition-colors">
           <TableCell><Input name="kode" value={editFormData.kode} onChange={handleInputChange} className="uppercase-input" /></TableCell>
           <TableCell><Input name="nama" value={editFormData.nama} onChange={handleInputChange} /></TableCell>
           <TableCell>
@@ -207,7 +207,7 @@ export function MasterGatePage() {
                 ) : (
                   <>
                     {editingId === 'new' && (
-                      <TableRow className="bg-slate-50">
+                      <TableRow className="bg-slate-50 hover:bg-accent/50 transition-colors">
                         <TableCell><Input name="kode" value={editFormData.kode} onChange={handleInputChange} className="uppercase-input" /></TableCell>
                         <TableCell><Input name="nama" value={editFormData.nama} onChange={handleInputChange} /></TableCell>
                         <TableCell>

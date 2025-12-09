@@ -124,7 +124,7 @@ export function MasterArmadaPage() {
     const isEditing = editingId === armada.id;
     if (isEditing) {
       return (
-        <TableRow key={armada.id} className="bg-slate-50">
+        <TableRow key={armada.id} className="bg-slate-50 hover:bg-accent/50 transition-colors">
           <TableCell><Input name="nomor_armada" value={editFormData.nomor_armada} onChange={handleInputChange} /></TableCell>
           <TableCell><Input name="jenis" value={editFormData.jenis} onChange={handleInputChange} className="uppercase-input" /></TableCell>
           <TableCell><Input name="plat" value={editFormData.plat} onChange={handleInputChange} className="uppercase-input" /></TableCell>
@@ -198,7 +198,7 @@ export function MasterArmadaPage() {
                 ) : (
                   <>
                     {editingId === 'new' && (
-                      <TableRow className="bg-slate-50">
+                      <TableRow className="bg-slate-50 hover:bg-accent/50 transition-colors">
                         <TableCell><Input name="nomor_armada" value={editFormData.nomor_armada} onChange={handleInputChange} /></TableCell>
                         <TableCell><Input name="jenis" value={editFormData.jenis} onChange={handleInputChange} className="uppercase-input" /></TableCell>
                         <TableCell><Input name="plat" value={editFormData.plat} onChange={handleInputChange} className="uppercase-input" /></TableCell>
