@@ -79,7 +79,8 @@ function updateWranglerJsonc() {
 function runSetupCommands() {
     const commands = [
     "bun add jose@^5.3.0",
-    "bun install papaparse"
+    "bun install papaparse",
+    "bun install @types/papaparse"
 ];
     
     if (commands.length === 0) {
