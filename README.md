@@ -1,6 +1,6 @@
 # Kartu Operasional
 
-[![[cloudflarebutton]]](https://deploy.workers.cloudflare.com/?url=${repositoryUrl})
+[![[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/hadisusilo8793/kartuoperasional)]](https://deploy.workers.cloudflare.com/?url=${repositoryUrl})
 
 A production-ready, lightweight web application for managing daily operations including card loans, drivers, fleets, gates, and transactions. Built with a focus on simplicity, performance, and ease of use for non-technical users. The app provides full CRUD operations for master data, transactional workflows for loans and returns, dynamic settings from the database, comprehensive logging, and a polished dashboard with visualizations.
 
@@ -143,7 +143,7 @@ Deploy to Cloudflare Pages for free hosting:
 
 For updates: Push to GitHub; auto-deploys via Pages integration.
 
-[![[cloudflarebutton]]](https://deploy.workers.cloudflare.com/?url=${repositoryUrl})
+[![[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/hadisusilo8793/kartuoperasional)]](https://deploy.workers.cloudflare.com/?url=${repositoryUrl})
 
 ## Contributing
 
