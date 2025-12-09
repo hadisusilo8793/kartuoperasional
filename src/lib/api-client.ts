@@ -1,45 +1,33 @@
-import { ApiResponse } from "../../shared/types"
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  // Read token from localStorage if available
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') : null
-
-  // Build headers starting with default Content-Type
-  const headers = new Headers({ 'Content-Type': 'application/json' })
-  if (init && init.headers) {
-    // Merge any existing headers from init into our headers
-    const initHeaders = new Headers(init.headers as HeadersInit)
-    initHeaders.forEach((value, key) => headers.set(key, value))
+import type { ApiResponse } from "@shared/types";
+export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('authToken');
+  const headers = new Headers(init?.headers);
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
   }
   if (token) {
-    headers.set('Authorization', `Bearer ${token}`)
+    headers.set('Authorization', `Bearer ${token}`);
   }
-
-  const res = await fetch(path, { ...init, headers })
-
-  // Handle unauthorized consistently: redirect and throw
-  if (res.status === 401) {
-    try {
-      if (typeof window !== 'undefined') window.location.href = '/login'
-    } catch (e) {
-      // ignore redirect errors
-    }
-    throw new Error('Unauthorized')
+  const response = await fetch(path, { ...init, headers });
+  if (response.status === 401 && window.location.pathname !== '/login') {
+    localStorage.removeItem('authToken');
+    window.location.href = '/login';
+    throw new Error('Unauthorized');
   }
-
-  // Safe JSON parsing: surface useful error if parsing fails and guard null
-  let json: ApiResponse<T> | null = null
-  try {
-    json = (await res.json()) as ApiResponse<T> | null
-  } catch (e) {
-    throw new Error('Invalid JSON response')
+  // Handle empty response body for non-JSON responses (e.g., 204 No Content)
+  if (response.status === 204 || response.headers.get('content-length') === '0') {
+    // Assuming a successful empty response should resolve to a specific type,
+    // like an empty object or true. Adjust as needed.
+    return {} as T;
   }
-
-  // In case server returned literal `null` or no JSON object
-  if (json == null) throw new Error('Invalid JSON response')
-
-  if (!res.ok || !json.success || json.data === undefined) throw new Error(json.error || 'Request failed')
-  return json.data
+  const data: ApiResponse<T> = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'An API error occurred');
+  }
+  if (data.success === false) {
+    throw new Error(data.error || 'An API error occurred');
+  }
+  // The API returns { success: true, data: ... }
+  // We just want to return the data part.
+  return data.data as T;
 }
-
-export { api }
