@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api-client';
 import { Toaster, toast } from 'sonner';
-import 'chart.js/auto';
-import Chart from 'chart.js/auto';
+
+
 import { Card } from '@/components/ui/card';
 /**
  * Types for dashboard response
@@ -41,7 +41,7 @@ export function DashboardPage(): JSX.Element {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const chartRef = useRef<Chart | null>(null);
+  const chartRef = useRef<any>(null);
   useEffect(() => {
     let mounted = true;
     setLoading(true);
@@ -83,7 +83,12 @@ export function DashboardPage(): JSX.Element {
     if (totalTol === 0 && totalParkir === 0) {
       return;
     }
-    chartRef.current = new Chart(ctx, {
+    const ChartCtor = (window as any).Chart;
+    if (!ChartCtor) {
+      // Chart.js is not available in this environment; skip rendering
+      return;
+    }
+    chartRef.current = new ChartCtor(ctx, {
       type: 'pie',
       data: {
         labels: ['Tol', 'Parkir'],
@@ -195,10 +200,6 @@ export function DashboardPage(): JSX.Element {
               ) : data?.chartData.tol === 0 && data?.chartData.parkir === 0 ? (
                 <div className="text-sm text-slate-500">Belum ada data biaya transaksi.</div>
               ) : (
-                <canvas ref={canvasRef => (canvasRef ? (canvasRef as HTMLCanvasElement).getContext && (canvasRef as HTMLCanvasElement).getContext('2d') : null) as unknown as HTMLCanvasElement} />
-              )}
-              {/* Use a hidden canvas element ref to mount Chart. Render an actual canvas element below */}
-              {!loading && data && (data.chartData.tol !== 0 || data.chartData.parkir !== 0) && (
                 <canvas ref={canvasRef} className="w-full h-80"></canvas>
               )}
             </div>
