@@ -13,7 +13,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800">
     <div class="flex h-screen">
-        <!-- Sidebar (same as index.html) -->
+        <!-- Sidebar -->
         <aside id="sidebar" class="bg-navy text-white w-64 min-h-screen flex flex-col transition-all duration-300">
             <div class="p-4 border-b border-white/10 flex items-center justify-between">
                 <h1 class="text-xl font-bold">KartuOps</h1>
@@ -66,7 +66,6 @@
         </aside>
         <!-- Main Content -->
         <div class="flex-1 flex flex-col">
-            <!-- Header -->
             <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-10">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex items-center justify-between h-16">
@@ -83,21 +82,39 @@
                     </div>
                 </div>
             </header>
-            <!-- Page Content -->
             <main class="flex-1 overflow-y-auto">
                 <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12">
                     <div class="card-ui">
                         <h2 class="text-lg font-semibold mb-6">Pengaturan Aplikasi</h2>
                         <form id="settingsForm" class="space-y-6">
-                            <!-- Form fields will be here -->
-                            <p class="text-center text-slate-500">Fitur ini akan diimplementasikan pada fase berikutnya.</p>
+                            <div>
+                                <label for="max_per_hari" class="form-label">Maks. Penggunaan Kartu per Hari</label>
+                                <input type="number" id="max_per_hari" name="max_per_hari" class="form-input nominal" required>
+                                <p class="text-xs text-slate-500 mt-1">Batas berapa kali satu kartu dapat digunakan dalam sehari.</p>
+                            </div>
+                            <div>
+                                <label for="min_saldo" class="form-label">Minimal Saldo Peringatan (Rp)</label>
+                                <input type="text" id="min_saldo" name="min_saldo" class="form-input nominal" required>
+                                <p class="text-xs text-slate-500 mt-1">Batas saldo minimum sebelum peringatan muncul di dashboard.</p>
+                            </div>
+                            <div>
+                                <label for="max_saldo" class="form-label">Maksimal Saldo Top-up (Rp)</label>
+                                <input type="text" id="max_saldo" name="max_saldo" class="form-input nominal" required>
+                                <p class="text-xs text-slate-500 mt-1">Batas saldo maksimal yang diizinkan saat top-up.</p>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" id="submitBtn" class="btn-primary">
+                                    <i data-lucide="save" class="w-5 h-5 mr-2"></i>
+                                    Simpan Pengaturan
+                                </button>
+                            </div>
                         </form>
                     </div>
                      <div class="card-ui mt-8">
                         <h2 class="text-lg font-semibold mb-4">Backup Database</h2>
                         <p class="text-slate-600 mb-4">Unduh salinan lengkap database dalam format SQL.</p>
-                        <a href="/api/db/backup" download class="inline-flex items-center gap-2 px-4 py-2 bg-navy text-white font-semibold rounded-lg hover:bg-opacity-90 transition-colors">
-                            <i data-lucide="download" class="w-5 h-5"></i>
+                        <a href="/api/db/backup" download class="btn-secondary">
+                            <i data-lucide="download" class="w-5 h-5 mr-2"></i>
                             Unduh Backup
                         </a>
                     </div>
@@ -108,7 +125,9 @@
             </main>
         </div>
     </div>
+    <div id="toast-container"></div>
     <script src="/assets/js/app.js"></script>
+    <script src="/assets/js/pages/settings.js"></script>
     <script>
         lucide.createIcons();
         window.app.init();

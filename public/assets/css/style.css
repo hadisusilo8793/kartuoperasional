@@ -47,6 +47,7 @@ body {
     inset: 0;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 40;
+    pointer-events: none; /* Prevents closing on backdrop click */
 }
 .modal-content {
     position: fixed;
@@ -54,4 +55,39 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 50;
+}
+/* Form Inputs */
+.form-label {
+    @apply block mb-2 text-sm font-medium text-slate-700;
+}
+.form-input {
+    @apply w-full px-4 py-2 text-slate-700 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500;
+}
+.form-input-sm {
+    @apply w-full px-2 py-1 text-sm text-slate-700 bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-cyan-500;
+}
+/* Buttons */
+.btn-primary {
+    @apply inline-flex items-center justify-center px-4 py-2 font-semibold text-white bg-navy rounded-lg hover:bg-opacity-90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50;
+}
+.btn-secondary {
+    @apply inline-flex items-center justify-center px-4 py-2 font-semibold text-slate-700 bg-slate-100 border border-slate-300 rounded-lg hover:bg-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50;
+}
+.btn-secondary-sm {
+    @apply inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold text-slate-700 bg-slate-100 border border-slate-300 rounded-md hover:bg-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50;
+}
+/* Status Badges */
+.status-aktif, .status-pinjam-dipinjam, .status-tersedia {
+    @apply px-2 py-0.5 text-xs font-medium rounded-full;
+}
+.status-aktif { @apply bg-green-100 text-green-800; }
+.status-nonaktif { @apply bg-slate-100 text-slate-800; }
+.status-pinjam-dipinjam { @apply bg-amber-100 text-amber-800; }
+.status-tersedia { @apply bg-blue-100 text-blue-800; }
+/* Dynamic Rows */
+.dynamic-row {
+    @apply flex items-center gap-2;
+}
+.remove-row-btn {
+    @apply p-1 text-red-500 hover:bg-red-100 rounded-full;
 }

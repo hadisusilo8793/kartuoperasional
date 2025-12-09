@@ -1,17 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
     const tableBody = document.getElementById('history-table-body');
+    const skeletonRow = document.getElementById('skeleton-row');
     const paginationControls = document.getElementById('pagination-controls');
     const searchForm = document.getElementById('search-form');
     const exportBtn = document.getElementById('export-csv-btn');
     let currentPage = 1;
+    let totalPages = 1;
     let currentData = [];
-    let searchTimer;
     const fetchHistory = async (page = 1) => {
-        tableBody.innerHTML = `
-            <tr class="animate-pulse"><td class="px-6 py-4" colspan="12"><div class="h-8 bg-slate-200 rounded"></div></td></tr>
-            <tr class="animate-pulse"><td class="px-6 py-4" colspan="12"><div class="h-8 bg-slate-200 rounded"></div></td></tr>
-            <tr class="animate-pulse"><td class="px-6 py-4" colspan="12"><div class="h-8 bg-slate-200 rounded"></div></td></tr>
-        `;
+        tableBody.innerHTML = '';
+        for (let i = 0; i < 5; i++) {
+            tableBody.appendChild(skeletonRow.cloneNode(true));
+        }
         try {
             const params = new URLSearchParams({
                 page,
@@ -28,44 +28,44 @@ document.addEventListener('DOMContentLoaded', () => {
             renderPagination(response.pagination);
         } catch (error) {
             window.app.ui.showToast(error.message, 'error');
-            tableBody.innerHTML = `<tr><td colspan="12" class="text-center py-4">Gagal memuat data.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Gagal memuat data.</td></tr>`;
         }
     };
     const renderTable = (data) => {
         tableBody.innerHTML = '';
         if (data.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="12" class="text-center py-4">Tidak ada data riwayat yang cocok.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Tidak ada data riwayat.</td></tr>`;
             return;
         }
         data.forEach(item => {
             const row = document.createElement('tr');
             row.className = 'bg-white border-b hover:bg-slate-50';
             row.innerHTML = `
-                <td class="px-6 py-4 whitespace-nowrap">${new Date(item.waktu_pinjam).toLocaleDateString('id-ID')}</td>
-                <td class="px-6 py-4">${item.nomor_armada}</td>
-                <td class="px-6 py-4">${item.plat}</td>
+                <td class="px-6 py-4">${new Date(item.waktu_pinjam).toLocaleString('id-ID')}</td>
+                <td class="px-6 py-4">${item.nomor_armada} (${item.plat})</td>
                 <td class="px-6 py-4">${item.nama_driver}</td>
-                <td class="px-6 py-4">${item.nik}</td>
                 <td class="px-6 py-4">${item.nomor_kartu}</td>
-                <td class="px-6 py-4">${item.serial_kartu}</td>
-                <td class="px-6 py-4">${item.gate_in || '-'}</td>
-                <td class="px-6 py-4">${item.gate_out || '-'}</td>
-                <td class="px-6 py-4 text-right">Rp ${item.total_tol.toLocaleString('id-ID')}</td>
-                <td class="px-6 py-4 text-right">Rp ${item.total_parkir.toLocaleString('id-ID')}</td>
-                <td class="px-6 py-4 text-right font-semibold">Rp ${item.total_biaya.toLocaleString('id-ID')}</td>
+                <td class="px-6 py-4 text-right font-medium">Rp ${item.total_biaya.toLocaleString('id-ID')}</td>
+                <td class="px-6 py-4 text-center">
+                    <button class="text-cyan-600 hover:text-cyan-800" onclick="viewDetails(${item.id})">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                    </button>
+                </td>
             `;
             tableBody.appendChild(row);
         });
+        lucide.createIcons();
     };
     const renderPagination = (pagination) => {
         currentPage = pagination.page;
+        totalPages = pagination.totalPages;
         paginationControls.innerHTML = `
             <span class="text-sm text-slate-700">
-                Menampilkan ${((currentPage - 1) * pagination.limit) + 1} - ${Math.min(currentPage * pagination.limit, pagination.total)} dari ${pagination.total} hasil
+                Halaman ${pagination.page} dari ${pagination.totalPages}
             </span>
             <div class="inline-flex -space-x-px rounded-md shadow-sm">
-                <button id="prev-page" ${pagination.page === 1 ? 'disabled' : ''} class="px-3 py-2 text-sm font-medium text-slate-500 bg-white border border-slate-300 rounded-l-md disabled:opacity-50 hover:bg-slate-50">Sebelumnya</button>
-                <button id="next-page" ${pagination.page >= pagination.totalPages ? 'disabled' : ''} class="px-3 py-2 text-sm font-medium text-slate-500 bg-white border border-slate-300 rounded-r-md disabled:opacity-50 hover:bg-slate-50">Berikutnya</button>
+                <button id="prev-page" ${pagination.page === 1 ? 'disabled' : ''} class="px-3 py-2 text-sm font-medium text-slate-500 bg-white border border-slate-300 rounded-l-md disabled:opacity-50">Sebelumnya</button>
+                <button id="next-page" ${pagination.page >= pagination.totalPages ? 'disabled' : ''} class="px-3 py-2 text-sm font-medium text-slate-500 bg-white border border-slate-300 rounded-r-md disabled:opacity-50">Berikutnya</button>
             </div>
         `;
         document.getElementById('prev-page').addEventListener('click', () => fetchHistory(currentPage - 1));
@@ -84,13 +84,11 @@ document.addEventListener('DOMContentLoaded', () => {
             "NIK": item.nik,
             "No Kartu": item.nomor_kartu,
             "Serial": item.serial_kartu,
-            "Gate In": item.gate_in,
-            "Gate Out": item.gate_out,
             "Biaya Tol": item.total_tol,
             "Biaya Parkir": item.total_parkir,
             "Total Biaya": item.total_biaya,
         })));
-        const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
@@ -101,9 +99,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(link);
         window.app.ui.showToast('Ekspor CSV berhasil', 'success');
     };
+    searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        fetchHistory(1);
+    });
     searchForm.addEventListener('input', () => {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => fetchHistory(1), 500);
+        // Debounce search
+        clearTimeout(searchForm.timer);
+        searchForm.timer = setTimeout(() => fetchHistory(1), 500);
     });
     exportBtn.addEventListener('click', exportToCSV);
     fetchHistory();
