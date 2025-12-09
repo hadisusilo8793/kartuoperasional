@@ -9,11 +9,34 @@ async function logAction(db, level, message) {
         console.error("Failed to write to logs:", e.message);
     }
 }
-// GET /api/driver
+/* GET /api/driver
+   - Jika D1 tidak terikat (mis. preview), kembalikan mock data kecil agar UI dapat render.
+   - Jika D1 tersedia, gunakan logika DB seperti semula.
+*/
 app.get('/', async (c) => {
     const { D1 } = c.env;
     try {
         const { search = '', id = '' } = c.req.query();
+
+        // Fallback mock ketika D1 tidak tersedia (preview)
+        if (!D1) {
+            const mock = [
+                { id: 1, nik: '000000', nama: 'Hadi Susilo', status: 'AKTIF' }
+            ];
+            let results = mock;
+            if (id) {
+                results = results.filter(r => String(r.id) === String(id));
+            }
+            if (search) {
+                const s = String(search).toLowerCase();
+                results = results.filter(r =>
+                    String(r.nama || '').toLowerCase().includes(s) ||
+                    String(r.nik || '').toLowerCase().includes(s)
+                );
+            }
+            return c.json({ success: true, data: results });
+        }
+
         let query = "SELECT * FROM driver";
         const bindings = [];
         const conditions = [];
@@ -36,9 +59,12 @@ app.get('/', async (c) => {
         return c.json({ success: false, error: e.message }, 500);
     }
 });
-// POST /api/driver
+ // POST /api/driver
 app.post('/', async (c) => {
     const { D1 } = c.env;
+    if (!D1) {
+        return c.json({ success: false, error: 'D1 binding not found. This endpoint requires a database.' }, 500);
+    }
     try {
         const { nik, nama, status } = await c.req.json();
         if (!nik || !nama) {
@@ -58,9 +84,12 @@ app.post('/', async (c) => {
         return c.json({ success: false, error: e.message }, 500);
     }
 });
-// POST /api/driver/import
+ // POST /api/driver/import
 app.post('/import', async (c) => {
     const { D1 } = c.env;
+    if (!D1) {
+        return c.json({ success: false, error: 'D1 binding not found. This endpoint requires a database.' }, 500);
+    }
     try {
         const items = await c.req.json();
         if (!Array.isArray(items) || items.length === 0) {
@@ -99,9 +128,12 @@ app.post('/import', async (c) => {
         return c.json({ success: false, error: e.message }, 500);
     }
 });
-// PUT /api/driver/:id
+ // PUT /api/driver/:id
 app.put('/:id', async (c) => {
     const { D1 } = c.env;
+    if (!D1) {
+        return c.json({ success: false, error: 'D1 binding not found. This endpoint requires a database.' }, 500);
+    }
     const { id } = c.req.param();
     try {
         const { nik, nama, status } = await c.req.json();
@@ -115,9 +147,12 @@ app.put('/:id', async (c) => {
         return c.json({ success: false, error: e.message }, 500);
     }
 });
-// DELETE /api/driver/:id
+ // DELETE /api/driver/:id
 app.delete('/:id', async (c) => {
     const { D1 } = c.env;
+    if (!D1) {
+        return c.json({ success: false, error: 'D1 binding not found. This endpoint requires a database.' }, 500);
+    }
     const { id } = c.req.param();
     try {
         const driver = await D1.prepare("SELECT nama FROM driver WHERE id = ?").bind(id).first();

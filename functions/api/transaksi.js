@@ -9,20 +9,24 @@ async function logAction(db, level, message) {
         console.error("Failed to write to logs:", e.message);
     }
 }
-// GET /api/transaksi/pinjaman-aktif
+ // GET /api/transaksi/pinjaman-aktif
 app.get('/pinjaman-aktif', async (c) => {
     const { D1 } = c.env;
+    // Fallback for environments without D1 bound (preview/local). Return same response shape.
+    if (!D1) {
+        return c.json({ success: true, data: [] });
+    }
     try {
         const { results } = await D1.prepare(`
-            SELECT 
-                pa.id, 
-                pa.transaksi_id, 
+            SELECT
+                pa.id,
+                pa.transaksi_id,
                 t.saldo_awal,
-                k.nomor as nomor_kartu, 
-                d.nama as nama_driver, 
-                a.nomor_armada, 
-                a.plat, 
-                pa.tujuan, 
+                k.nomor as nomor_kartu,
+                d.nama as nama_driver,
+                a.nomor_armada,
+                a.plat,
+                pa.tujuan,
                 pa.waktu_pinjam
             FROM pinjaman_aktif pa
             JOIN transaksi t ON pa.transaksi_id = t.id
@@ -81,8 +85,8 @@ app.post('/pengembalian/:id', async (c) => {
         if (!trx || trx.status !== 'AKTIF') {
             return c.json({ success: false, error: 'Transaksi tidak valid atau sudah selesai' }, 400);
         }
-        const total_tol = gate_in_out.reduce((sum, item) => sum + (parseInt(item.biaya, 10) || 0), 0);
-        const total_parkir = parkir.reduce((sum, item) => sum + (parseInt(item.biaya, 10) || 0), 0);
+        const total_tol = (gate_in_out || []).reduce((sum, item) => sum + (parseInt(item?.biaya, 10) || 0), 0);
+        const total_parkir = (parkir || []).reduce((sum, item) => sum + (parseInt(item?.biaya, 10) || 0), 0);
         const total_biaya = total_tol + total_parkir;
         const saldo_akhir = trx.saldo_awal - total_biaya;
         const waktu_kembali = new Date().toISOString();

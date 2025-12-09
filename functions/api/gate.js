@@ -14,6 +14,22 @@ app.get('/', async (c) => {
     const { D1 } = c.env;
     try {
         const { search = '', id = '' } = c.req.query();
+        // Fallback mock data when D1 is not bound (e.g., running locally or misconfigured)
+        if (!D1) {
+            const mocks = [
+                { id: 1, kode: 'T01', nama: 'Gerbang Utama', kategori: 'TOL', area: 'Area A', status: 'AKTIF' },
+                { id: 2, kode: 'P01', nama: 'Gerbang Parkir', kategori: 'PARKIR', area: 'Area B', status: 'AKTIF' }
+            ];
+            const filtered = mocks.filter(g => {
+                if (id) return String(g.id) === String(id);
+                if (search) {
+                    const s = search.toLowerCase();
+                    return (g.nama || '').toLowerCase().includes(s) || (g.kode || '').toLowerCase().includes(s);
+                }
+                return true;
+            });
+            return c.json({ success: true, data: filtered });
+        }
         let query = "SELECT * FROM gate";
         const bindings = [];
         const conditions = [];

@@ -14,6 +14,18 @@ app.get('/', async (c) => {
     const { D1 } = c.env;
     try {
         const { search = '', id = '' } = c.req.query();
+        if (!D1) {
+            // Mock fallback when D1 binding is not available (preview/preview environments)
+            const mock = [{ id: 1, nomor_armada: '001', jenis: 'TRUCK', plat: 'B0001', status: 'AKTIF' }];
+            let results = mock;
+            if (id) {
+                results = results.filter(r => String(r.id) === String(id));
+            }
+            if (search) {
+                results = results.filter(r => r.nomor_armada.includes(search) || r.plat.includes(search));
+            }
+            return c.json({ success: true, data: results });
+        }
         let query = "SELECT * FROM armada";
         const bindings = [];
         const conditions = [];
@@ -39,6 +51,9 @@ app.get('/', async (c) => {
 // POST /api/armada
 app.post('/', async (c) => {
     const { D1 } = c.env;
+    if (!D1) {
+        return c.json({ success: false, error: 'Database tidak tersedia' }, 503);
+    }
     try {
         const { nomor_armada, jenis, plat, status } = await c.req.json();
         if (!nomor_armada || !jenis || !plat) {
@@ -61,6 +76,9 @@ app.post('/', async (c) => {
 // POST /api/armada/import
 app.post('/import', async (c) => {
     const { D1 } = c.env;
+    if (!D1) {
+        return c.json({ success: false, error: 'Database tidak tersedia' }, 503);
+    }
     try {
         const items = await c.req.json();
         if (!Array.isArray(items) || items.length === 0) {
@@ -103,6 +121,9 @@ app.post('/import', async (c) => {
 app.put('/:id', async (c) => {
     const { D1 } = c.env;
     const { id } = c.req.param();
+    if (!D1) {
+        return c.json({ success: false, error: 'Database tidak tersedia' }, 503);
+    }
     try {
         const { nomor_armada, jenis, plat, status } = await c.req.json();
         await D1.prepare("UPDATE armada SET nomor_armada = ?, jenis = ?, plat = ?, status = ? WHERE id = ?")
@@ -119,6 +140,9 @@ app.put('/:id', async (c) => {
 app.delete('/:id', async (c) => {
     const { D1 } = c.env;
     const { id } = c.req.param();
+    if (!D1) {
+        return c.json({ success: false, error: 'Database tidak tersedia' }, 503);
+    }
     try {
         const armada = await D1.prepare("SELECT nomor_armada FROM armada WHERE id = ?").bind(id).first();
         if (!armada) {

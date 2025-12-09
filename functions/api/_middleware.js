@@ -19,6 +19,15 @@ export const onRequest = async (context) => {
   if (url.pathname === '/api/auth' || url.pathname.startsWith('/api/auth/') || url.pathname === '/api/db/backup') {
     return await next();
   }
+  // If D1 binding is missing (e.g., preview environment), allow public GET requests to proceed
+  // but continue to enforce auth for mutating methods (POST/PUT/DELETE).
+  if (!env.D1) {
+    if (request.method === 'GET') {
+      console.warn(`Preview: No D1 binding detected - allowing public GET for path: ${url.pathname}`);
+      return await next();
+    }
+    // For non-GET requests, continue to enforce auth (logAction will handle missing db)
+  }
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     await logAction(env.D1, 'WARNING', `Auth failed: No token. Path: ${url.pathname}`);

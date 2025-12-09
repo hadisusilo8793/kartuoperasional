@@ -2,6 +2,19 @@ import { Hono } from 'hono';
 const app = new Hono();
 app.get('/', async (c) => {
     const { D1 } = c.env;
+    // Fallback for environments where D1 is not bound (e.g., preview)
+    if (!D1) {
+        return c.json({
+            success: true,
+            data: [],
+            pagination: {
+                page: 1,
+                limit: 10,
+                total: 0,
+                totalPages: 0
+            }
+        });
+    }
     try {
         const {
             page = 1,
