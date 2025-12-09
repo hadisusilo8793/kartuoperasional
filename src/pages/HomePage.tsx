@@ -42,7 +42,7 @@ export function HomePage() {
           // For this template, we'll just log it.
           console.log('Login successful, redirecting...');
           // Since this is a vanilla JS app, we will redirect manually
-          window.location.href = '/index.html';
+          navigate('/dashboard');
         }, 1000);
       } else {
         toast.error(data.error || 'Invalid credentials');

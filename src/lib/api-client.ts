@@ -20,7 +20,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   // Handle unauthorized consistently: redirect and throw
   if (res.status === 401) {
     try {
-      if (typeof window !== 'undefined') window.location.href = '/login.html'
+      if (typeof window !== 'undefined') window.location.href = '/login'
     } catch (e) {
       // ignore redirect errors
     }

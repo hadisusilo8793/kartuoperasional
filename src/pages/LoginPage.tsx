@@ -1,100 +1,108 @@
-import React, { useState, FormEvent, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Toaster, toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
-import { api } from '@/lib/api-client';
-export function LoginPage() {
+/**
+ * LoginPage
+ *
+ * - Calls POST /api/auth with { username, password }
+ * - On success saves token to localStorage key 'authToken'
+ * - Navigates to /dashboard
+ * - Shows sonner toasts for feedback
+ *
+ * Exported as named component (used by router in src/main.tsx)
+ */
+export function LoginPage(): JSX.Element {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('HADI SUSILO');
-  const [password, setPassword] = useState('Wiwokdetok8793');
-  const [isLoading, setIsLoading] = useState(false);
-  useEffect(() => {
-    // If user is already logged in, redirect to dashboard
-    if (localStorage.getItem('authToken')) {
-      navigate('/dashboard');
-    }
-  }, [navigate]);
-  const handleLogin = async (e: FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const [username, setUsername] = useState<string>('HADI SUSILO');
+  const [password, setPassword] = useState<string>('Wiwokdetok8793');
+  const [loading, setLoading] = useState<boolean>(false);
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (loading) return;
+    setLoading(true);
     try {
-      const data = await api<{ token: string }>('/api/auth', {
+      const res = await fetch('/api/auth', {
         method: 'POST',
-        body: JSON.stringify({ username, password }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username?.trim(), password: password ?? '' }),
       });
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        toast.success('Login successful!');
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 500);
-      } else {
-        throw new Error('Login failed: No token received.');
+      const payload = await res.json();
+      if (!res.ok || !payload?.token) {
+        const message = payload?.error || payload?.message || 'Login gagal. Periksa username/password.';
+        toast.error(message);
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      toast.error(errorMessage);
+      // Save token to localStorage (key used by api-client is 'authToken')
+      try {
+        localStorage.setItem('authToken', payload.token);
+      } catch (err) {
+        // Non-fatal: still navigate
+        console.warn('Failed saving token to localStorage', err);
+      }
+      toast.success('Login berhasil');
+      // small delay to allow toast to show nicely
+      setTimeout(() => navigate('/dashboard'), 350);
+    } catch (err: any) {
+      toast.error(err?.message || 'Terjadi kesalahan jaringan');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-gray-900 p-4">
-      <Toaster richColors position="top-center" />
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-[#0B2340]/10" />
-      <Card className="w-full max-w-md mx-auto shadow-2xl rounded-2xl border-border/20 animate-fade-in z-10 bg-card/80 backdrop-blur-lg">
-        <CardHeader className="text-center space-y-2 pt-8">
-          <CardTitle className="text-3xl font-bold" style={{ color: '#0B2340' }}>
-            Kartu Operasional
-          </CardTitle>
-          <CardDescription>Silakan login untuk melanjutkan</CardDescription>
-        </CardHeader>
-        <CardContent className="p-6 md:p-8">
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Username"
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="h-12 text-base"
-                autoComplete="username"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-12 text-base"
-                autoComplete="current-password"
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full h-12 text-lg font-semibold transition-all duration-300 hover:scale-105 active:scale-95"
-              disabled={isLoading}
-              style={{ backgroundColor: '#0B2340', color: 'white' }}
-            >
-              {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Login'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-      <footer className="absolute bottom-4 text-center text-sm text-muted-foreground/80">
-        <p>&copy; 2025 Hadi Susilo. All Rights Reserved.</p>
-      </footer>
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 p-6">
+      <Toaster richColors position="top-right" />
+      <div className="w-full max-w-md">
+        <Card className="shadow-2xl rounded-2xl border-border/10">
+          <CardHeader className="text-center p-6">
+            <CardTitle className="text-2xl font-bold" style={{ color: '#0B2340' }}>
+              Kartu Operasional
+            </CardTitle>
+            <CardDescription>Silakan login untuk melanjutkan</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <form onSubmit={(e) => handleSubmit(e)} className="space-y-4">
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="mt-2 h-11"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-2 h-11"
+                  required
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary inline-flex items-center"
+                >
+                  {loading ? 'Memproses...' : 'Login'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+        <footer className="mt-6 text-center text-sm text-slate-500">
+          &copy; 2025 Hadi Susilo. All Rights Reserved.
+        </footer>
+      </div>
     </div>
   );
 }

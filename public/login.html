@@ -53,7 +53,7 @@
                 try {
                     const data = await window.app.auth.login(username, password);
                     if (data.success) {
-                        window.location.href = '/index.html';
+                        window.location.href = '/dashboard';
                     } else {
                         errorMessage.textContent = data.error || 'Login gagal.';
                         errorMessage.classList.remove('hidden');

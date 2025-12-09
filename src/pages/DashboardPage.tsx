@@ -1,14 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api-client';
 import { Toaster, toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { CreditCard, UserSquare, Truck, ArrowRightLeft, AlertTriangle } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
+import 'chart.js/auto';
+import Chart from 'chart.js/auto';
+import { Card } from '@/components/ui/card';
+/**
+ * Types for dashboard response
+ */
 type DashboardStats = {
   kartuAktif: number;
   driverAktif: number;
@@ -31,141 +29,227 @@ type DashboardData = {
   lowBalance: LowBalanceRow[];
   chartData: { tol: number; parkir: number };
 };
-const StatCard = ({ icon, title, value }: { icon: React.ReactNode; title: string; value: number | string }) => (
-  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-    <Card className="rounded-[18px] shadow-soft hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <div className="text-cyan-600">{icon}</div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold">{value}</div>
-      </CardContent>
-    </Card>
-  </motion.div>
-);
-const StatCardSkeleton = () => <Skeleton className="h-[108px] rounded-[18px]" />;
-export function DashboardPage() {
-  const navigate = useNavigate();
+/**
+ * DashboardPage
+ *
+ * - Uses api<T>() to fetch /api/dashboard
+ * - Renders 4 stat cards, latest logs, low-balance list, and a Chart.js pie
+ * - Cleans up Chart instance on unmount
+ */
+export function DashboardPage(): JSX.Element {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const chartRef = useRef<Chart | null>(null);
   useEffect(() => {
-    const fetchData = async () => {
+    let mounted = true;
+    setLoading(true);
+    api<DashboardData>('/api/dashboard')
+      .then((d) => {
+        if (!mounted) return;
+        setData(d);
+        setError(null);
+      })
+      .catch((err: any) => {
+        console.error('Dashboard fetch error', err);
+        setError(err?.message || 'Gagal memuat dashboard');
+        toast.error(err?.message || 'Gagal memuat dashboard');
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  // Chart rendering + cleanup
+  useEffect(() => {
+    if (!data || !canvasRef.current) return;
+    const ctx = canvasRef.current.getContext('2d');
+    if (!ctx) return;
+    // Destroy previous instance if any
+    if (chartRef.current) {
       try {
-        setLoading(true);
-        const dashboardData = await api<DashboardData>('/api/dashboard');
-        setData(dashboardData);
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to load dashboard data';
-        if (errorMessage.includes('Unauthorized')) {
-          localStorage.removeItem('authToken');
-          navigate('/login');
-          return;
-        }
-        toast.error(errorMessage);
-        setData(null);
-      } finally {
-        setLoading(false);
+        chartRef.current.destroy();
+      } catch (e) {
+        // ignore
+      }
+      chartRef.current = null;
+    }
+    const totalTol = data.chartData?.tol ?? 0;
+    const totalParkir = data.chartData?.parkir ?? 0;
+    // If both zero, do not render a pie chart; show a placeholder by leaving chartRef null
+    if (totalTol === 0 && totalParkir === 0) {
+      return;
+    }
+    chartRef.current = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['Tol', 'Parkir'],
+        datasets: [
+          {
+            data: [totalTol, totalParkir],
+            backgroundColor: ['#0B2340', '#06B6D4'],
+            borderColor: '#ffffff',
+            borderWidth: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { boxWidth: 12, padding: 12, color: '#0f172a' },
+          },
+          tooltip: {
+            callbacks: {
+              label(ctx) {
+                const label = ctx.label || '';
+                const value = ctx.parsed ?? 0;
+                return `${label}: Rp ${new Intl.NumberFormat('id-ID').format(Number(value))}`;
+              },
+            },
+          },
+        },
+      },
+    });
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
       }
     };
-    fetchData();
-  }, [navigate]);
+  }, [data]);
   const formatCurrency = (n = 0) => `Rp ${new Intl.NumberFormat('id-ID').format(n)}`;
-  const chartData = [
-    { name: 'Tol', value: data?.chartData?.tol ?? 0 },
-    { name: 'Parkir', value: data?.chartData?.parkir ?? 0 },
-  ];
-  const COLORS = ['#0B2340', '#06B6D4'];
   return (
-    <AppLayout pageTitle="Dashboard">
+    <main className="min-h-screen bg-background text-foreground p-6">
       <Toaster richColors position="top-right" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {loading || !data ? (
-          <>
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-          </>
-        ) : (
-          <>
-            <StatCard icon={<CreditCard />} title="Kartu Aktif" value={data.stats.kartuAktif} />
-            <StatCard icon={<UserSquare />} title="Driver Aktif" value={data.stats.driverAktif} />
-            <StatCard icon={<Truck />} title="Armada Aktif" value={data.stats.armadaAktif} />
-            <StatCard icon={<ArrowRightLeft />} title="Transaksi Hari Ini" value={data.stats.transaksiHariIni} />
-          </>
-        )}
-      </div>
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card className="lg:col-span-2 rounded-[18px] shadow-soft p-6 h-full">
+      <div className="max-w-7xl mx-auto">
+        <header className="flex items-center justify-between py-4">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <div className="text-sm">Hadi Susilo</div>
+            <img
+              src="https://ui-avatars.com/api/?name=Hadi+Susilo&background=0B2340&color=fff"
+              alt="avatar"
+              className="h-9 w-9 rounded-full"
+            />
+          </div>
+        </header>
+        {/* Stats */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {loading ? (
+            <>
+              <Card className="card-ui animate-pulse"><div className="h-24 bg-slate-200 rounded-lg" /></Card>
+              <Card className="card-ui animate-pulse"><div className="h-24 bg-slate-200 rounded-lg" /></Card>
+              <Card className="card-ui animate-pulse"><div className="h-24 bg-slate-200 rounded-lg" /></Card>
+              <Card className="card-ui animate-pulse"><div className="h-24 bg-slate-200 rounded-lg" /></Card>
+            </>
+          ) : error ? (
+            <div className="col-span-4 p-6 rounded-lg bg-rose-50 text-rose-700">{error}</div>
+          ) : (
+            <>
+              <Card className="card-ui flex items-center gap-4 p-4">
+                <div className="p-3 rounded-full bg-cyan-100 text-cyan-600"><svg className="w-6 h-6" /></div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Kartu Aktif</div>
+                  <div className="text-3xl font-bold">{data?.stats.kartuAktif ?? 0}</div>
+                </div>
+              </Card>
+              <Card className="card-ui flex items-center gap-4 p-4">
+                <div className="p-3 rounded-full bg-cyan-100 text-cyan-600"><svg className="w-6 h-6" /></div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Driver Aktif</div>
+                  <div className="text-3xl font-bold">{data?.stats.driverAktif ?? 0}</div>
+                </div>
+              </Card>
+              <Card className="card-ui flex items-center gap-4 p-4">
+                <div className="p-3 rounded-full bg-cyan-100 text-cyan-600"><svg className="w-6 h-6" /></div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Armada Aktif</div>
+                  <div className="text-3xl font-bold">{data?.stats.armadaAktif ?? 0}</div>
+                </div>
+              </Card>
+              <Card className="card-ui flex items-center gap-4 p-4">
+                <div className="p-3 rounded-full bg-cyan-100 text-cyan-600"><svg className="w-6 h-6" /></div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Transaksi Hari Ini</div>
+                  <div className="text-3xl font-bold">{data?.stats.transaksiHariIni ?? 0}</div>
+                </div>
+              </Card>
+            </>
+          )}
+        </section>
+        {/* Charts & Logs */}
+        <section className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 card-ui p-4">
             <h2 className="text-lg font-semibold mb-4">Biaya Tol vs Parkir</h2>
-            <div className="h-80">
+            <div className="h-80 flex items-center justify-center">
               {loading ? (
-                <Skeleton className="w-full h-full" />
-              ) : !data || (chartData[0].value === 0 && chartData[1].value === 0) ? (
-                <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                  <p>Belum ada data transaksi.</p>
-                  <Button asChild variant="link" size="sm"><Link to="/transaksi">Mulai Peminjaman!</Link></Button>
-                </motion.div>
+                <div className="w-full animate-pulse">
+                  <div className="h-64 bg-slate-200 rounded-lg" />
+                </div>
+              ) : data?.chartData.tol === 0 && data?.chartData.parkir === 0 ? (
+                <div className="text-sm text-slate-500">Belum ada data biaya transaksi.</div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+                <canvas ref={canvasRef => (canvasRef ? (canvasRef as HTMLCanvasElement).getContext && (canvasRef as HTMLCanvasElement).getContext('2d') : null) as unknown as HTMLCanvasElement} />
+              )}
+              {/* Use a hidden canvas element ref to mount Chart. Render an actual canvas element below */}
+              {!loading && data && (data.chartData.tol !== 0 || data.chartData.parkir !== 0) && (
+                <canvas ref={canvasRef} className="w-full h-80"></canvas>
               )}
             </div>
-          </Card>
-        </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <Card className="rounded-[18px] shadow-soft p-6 h-full">
+          </div>
+          <div className="card-ui p-4">
             <h2 className="text-lg font-semibold mb-4">Log Terbaru</h2>
             <div className="space-y-3">
               {loading ? (
-                Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)
-              ) : !data || data.logs.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-10">Log pertama akan muncul setelah ada aktivitas.</p>
-              ) : (
-                data.logs.map((log, index) => (
-                  <div key={log.id ?? index} className="text-sm border-b border-slate-100 pb-2 last:border-b-0">
-                    <p className="font-medium truncate text-slate-700">{log.pesan}</p>
-                    <p className="text-xs text-slate-400">{new Date(log.waktu).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</p>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="animate-pulse flex space-x-4">
+                    <div className="flex-1 space-y-2 py-1">
+                      <div className="h-4 bg-slate-200 rounded"></div>
+                      <div className="h-4 bg-slate-200 rounded w-5/6"></div>
+                    </div>
                   </div>
                 ))
+              ) : data && data.logs.length > 0 ? (
+                data.logs.map((log) => (
+                  <div key={log.id ?? log.waktu} className="text-sm border-b border-slate-100 pb-2">
+                    <p className="font-medium truncate text-slate-700">{log.pesan}</p>
+                    <p className="text-xs text-slate-400">{new Date(log.waktu).toLocaleString('id-ID')}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-slate-500">Tidak ada log terbaru.</div>
               )}
             </div>
-          </Card>
-        </motion.div>
-      </div>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-        <Card className="mt-8 rounded-[18px] shadow-soft p-6">
-          <h2 className="text-lg font-semibold mb-4 text-amber-600 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5" />
-            Kartu Saldo Rendah
-          </h2>
-          <div>
+          </div>
+        </section>
+        {/* Low Balance */}
+        <section className="mt-8 card-ui p-4">
+          <h2 className="text-lg font-semibold mb-4 text-amber-600">Kartu Saldo Rendah</h2>
+          <div id="low-balance" className="space-y-2">
             {loading ? (
-              <Skeleton className="h-8 w-full" />
-            ) : !data || data.lowBalance.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Semua kartu memiliki saldo yang cukup.</p>
-            ) : (
-              data.lowBalance.map((card, index) => (
-                <div key={index} className="flex justify-between items-center p-2 rounded-lg hover:bg-amber-50">
-                  <span className="text-slate-600">Kartu <strong>{card.nomor}</strong></span>
-                  <span className="font-semibold text-amber-700">{formatCurrency(card.saldo)}</span>
+              <div className="animate-pulse h-8 bg-slate-200 rounded w-full" />
+            ) : data && data.lowBalance.length > 0 ? (
+              data.lowBalance.map((c, idx) => (
+                <div key={idx} className="flex justify-between items-center p-2 rounded-lg hover:bg-amber-50">
+                  <span className="text-slate-600">Kartu <strong>{c.nomor}</strong></span>
+                  <span className="font-semibold text-amber-700">{formatCurrency(c.saldo)}</span>
                 </div>
               ))
+            ) : (
+              <div className="text-sm text-slate-500">Tidak ada kartu dengan saldo rendah.</div>
             )}
           </div>
-        </Card>
-      </motion.div>
-    </AppLayout>
+        </section>
+        <footer className="text-center py-6 text-sm text-slate-500">
+          &copy; 2025 Hadi Susilo. All Rights Reserved.
+        </footer>
+      </div>
+    </main>
   );
 }

@@ -6,7 +6,7 @@
         saveToken: (token) => localStorage.setItem(TOKEN_KEY, token),
         logout: () => {
             localStorage.removeItem(TOKEN_KEY);
-            window.location.href = '/login.html';
+            window.location.href = '/login';
         },
         login: async (username, password) => {
             const response = await fetch('/api/auth', {
@@ -32,7 +32,7 @@
                 headers['Authorization'] = `Bearer ${token}`;
             }
             const response = await fetch(url, { ...options, headers });
-            if (response.status === 401 && window.location.pathname !== '/login.html') {
+            if (response.status === 401 && window.location.pathname !== '/login') {
                 auth.logout();
                 throw new Error('Sesi Anda telah berakhir. Silakan login kembali.');
             }
@@ -107,8 +107,8 @@
         if (toggleOpen) toggleOpen.addEventListener('click', expandSidebar);
     }
     function initAuthCheck() {
-        if (window.location.pathname !== '/login.html' && !auth.getToken()) {
-            window.location.href = '/login.html';
+        if (window.location.pathname !== '/login' && !auth.getToken()) {
+            window.location.href = '/login';
         }
     }
     function initLogout() {
