@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
-  LayoutDashboard, CreditCard, UserSquare, Truck, Gate,
+  LayoutDashboard, CreditCard, UserSquare, Truck, MapPin,
   ArrowRightLeft, Undo2, History, Settings, ShieldAlert, LogOut, ChevronsLeft
 } from "lucide-react";
 import {
@@ -21,7 +21,7 @@ const masterDataItems = [
   { href: "/master-kartu", icon: CreditCard, label: "Master Kartu" },
   { href: "/master-driver", icon: UserSquare, label: "Master Driver" },
   { href: "/master-armada", icon: Truck, label: "Master Armada" },
-  { href: "/master-gate", icon: Gate, label: "Master Gate" },
+  { href: "/master-gate", icon: MapPin, label: "Master Gate" },
 ];
 const bottomNavItems = [
   { href: "/settings", icon: Settings, label: "Settings" },
