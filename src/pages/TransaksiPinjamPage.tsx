@@ -16,10 +16,10 @@ import { cn } from "@/lib/utils";
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Textarea } from '@/components/ui/textarea';
 const pinjamSchema = z.object({
-  driver_id: z.number({ required_error: "Driver harus dipilih." }),
-  armada_id: z.number({ required_error: "Armada harus dipilih." }),
-  kartu_id: z.number({ required_error: "Kartu harus dipilih." }),
-  tujuan: z.string().min(1, "Tujuan harus diisi."),
+  driver_id: z.number().min(1, { message: "Driver harus dipilih." }),
+  armada_id: z.number().min(1, { message: "Armada harus dipilih." }),
+  kartu_id: z.number().min(1, { message: "Kartu harus dipilih." }),
+  tujuan: z.string().min(1, { message: "Tujuan harus diisi." }),
 });
 type PinjamFormValues = z.infer<typeof pinjamSchema>;
 type SelectOption = {

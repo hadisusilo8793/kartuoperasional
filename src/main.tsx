@@ -11,11 +11,13 @@ import { LoginPage } from '@/pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { TransaksiPinjamPage } from '@/pages/TransaksiPinjamPage';
 import { PengembalianPage } from '@/pages/PengembalianPage';
+import { HistoryPage } from '@/pages/HistoryPage';
 import { MasterKartuPage } from '@/pages/MasterKartuPage';
 import { MasterDriverPage } from '@/pages/MasterDriverPage';
 import { MasterArmadaPage } from '@/pages/MasterArmadaPage';
 import { MasterGatePage } from '@/pages/MasterGatePage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { LogsPage } from '@/pages/LogsPage';
 import { AppLayout } from '@/components/layout/AppLayout';
 enableMapSet();
 // Placeholder for pages that are not yet implemented in React
@@ -34,13 +36,13 @@ const router = createBrowserRouter([
   { path: "/dashboard", element: <DashboardPage />, errorElement: <RouteErrorBoundary /> },
   { path: "/transaksi", element: <TransaksiPinjamPage />, errorElement: <RouteErrorBoundary /> },
   { path: "/pengembalian", element: <PengembalianPage />, errorElement: <RouteErrorBoundary /> },
-  { path: "/history", element: <PlaceholderPage title="Riwayat Transaksi" />, errorElement: <RouteErrorBoundary /> },
+  { path: "/history", element: <HistoryPage />, errorElement: <RouteErrorBoundary /> },
   { path: "/master-kartu", element: <MasterKartuPage />, errorElement: <RouteErrorBoundary /> },
   { path: "/master-driver", element: <MasterDriverPage />, errorElement: <RouteErrorBoundary /> },
   { path: "/master-armada", element: <MasterArmadaPage />, errorElement: <RouteErrorBoundary /> },
   { path: "/master-gate", element: <MasterGatePage />, errorElement: <RouteErrorBoundary /> },
   { path: "/settings", element: <SettingsPage />, errorElement: <RouteErrorBoundary /> },
-  { path: "/logs", element: <PlaceholderPage title="Logs" />, errorElement: <RouteErrorBoundary /> },
+  { path: "/logs", element: <LogsPage />, errorElement: <RouteErrorBoundary /> },
 ]);
 const rootElement = document.getElementById('root');
 if (!rootElement) {

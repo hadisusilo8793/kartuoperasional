@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
 import { api } from '@/lib/api-client';
 import { Toaster, toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,6 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import Papa from 'papaparse';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useDebounce } from 'react-use';
-import { motion, AnimatePresence } from 'framer-motion';
 type Transaksi = {
   id: number;
   waktu_pinjam: string;
@@ -65,7 +63,7 @@ export function HistoryPage() {
   useDebounce(() => {
     setDebouncedSearch(searchValues);
   }, 500, [searchValues]);
-  const fetchHistory = useCallback(async (page = 1) => {
+  const fetchHistory = async (page = 1) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -77,18 +75,18 @@ export function HistoryPage() {
       if (debouncedSearch.armada_search) params.set('armada_search', debouncedSearch.armada_search);
       if (debouncedSearch.date_from) params.set('date_from', debouncedSearch.date_from);
       if (debouncedSearch.date_to) params.set('date_to', debouncedSearch.date_to);
-      const response = await api<{ data: Transaksi[], pagination: PaginationInfo }>(`/api/history?${params.toString()}`);
-      setData(response.data || []);
-      setPagination(response.pagination || null);
+      const response = await api<{ data: Transaksi[]; pagination: PaginationInfo }>(`/api/history?${params.toString()}`);
+      setData(response.data);
+      setPagination(response.pagination);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Gagal memuat riwayat.');
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch]);
+  };
   useEffect(() => {
     fetchHistory(1);
-  }, [fetchHistory]);
+  }, [debouncedSearch]);
   const handlePageChange = (newPage: number) => {
     if (newPage > 0 && pagination && newPage <= pagination.totalPages) {
       fetchHistory(newPage);
@@ -99,33 +97,28 @@ export function HistoryPage() {
       toast.info('Tidak ada data untuk diekspor.');
       return;
     }
-    const toastId = toast.loading('Mengekspor data...');
-    try {
-      const csvData = data.map(item => ({
-        "Tanggal": formatDate(item.waktu_pinjam),
-        "No Armada": item.nomor_armada,
-        "Plat": item.plat,
-        "Nama Driver": item.nama_driver,
-        "NIK": item.nik,
-        "No Kartu": item.nomor_kartu,
-        "Serial Kartu": item.serial_kartu,
-        "Biaya Tol": item.total_tol,
-        "Biaya Parkir": item.total_parkir,
-        "Total Biaya": item.total_biaya,
-      }));
-      const csv = Papa.unparse(csvData);
-      const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", `riwayat_transaksi_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success('Ekspor CSV berhasil.', { id: toastId });
-    } catch (error) {
-      toast.error('Ekspor gagal.', { id: toastId });
-    }
+    const csvData = data.map(item => ({
+      "Tanggal": formatDate(item.waktu_pinjam),
+      "No Armada": item.nomor_armada,
+      "Plat": item.plat,
+      "Nama Driver": item.nama_driver,
+      "NIK": item.nik,
+      "No Kartu": item.nomor_kartu,
+      "Serial Kartu": item.serial_kartu,
+      "Biaya Tol": item.total_tol,
+      "Biaya Parkir": item.total_parkir,
+      "Total Biaya": item.total_biaya,
+    }));
+    const csv = Papa.unparse(csvData);
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `riwayat_transaksi_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Ekspor CSV berhasil.');
   };
   return (
     <AppLayout pageTitle="Riwayat Transaksi">
@@ -166,28 +159,17 @@ export function HistoryPage() {
                     <TableRow key={i}><TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
                   ))
                 ) : data.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-48 text-center">
-                      <div className="flex flex-col items-center gap-4">
-                        <p className="text-muted-foreground">Belum ada transaksi. Buat yang pertama!</p>
-                        <motion.div whileHover={{ scale: 1.05 }} transition={{ type: 'spring', stiffness: 300 }}>
-                          <Button asChild variant="outline"><Link to="/transaksi">Mulai Peminjaman</Link></Button>
-                        </motion.div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Tidak ada data riwayat.</TableCell></TableRow>
                 ) : (
-                  <AnimatePresence>
-                    {data.map((item, index) => (
-                      <motion.tr key={item.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="hover:bg-accent/50">
-                        <TableCell>{formatDate(item.waktu_pinjam)}</TableCell>
-                        <TableCell>{item.nomor_armada} ({item.plat})</TableCell>
-                        <TableCell>{item.nama_driver}</TableCell>
-                        <TableCell>{item.nomor_kartu}</TableCell>
-                        <TableCell className="text-right font-semibold">{formatCurrency(item.total_biaya)}</TableCell>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
+                  data.map(item => (
+                    <TableRow key={item.id} className="hover:bg-accent">
+                      <TableCell>{formatDate(item.waktu_pinjam)}</TableCell>
+                      <TableCell>{item.nomor_armada} ({item.plat})</TableCell>
+                      <TableCell>{item.nama_driver}</TableCell>
+                      <TableCell>{item.nomor_kartu}</TableCell>
+                      <TableCell className="text-right font-semibold">{formatCurrency(item.total_biaya)}</TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
@@ -200,11 +182,11 @@ export function HistoryPage() {
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
-                    <PaginationPrevious onClick={() => handlePageChange(pagination.page - 1)} className={pagination.page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:scale-105 transition-transform duration-150'} />
+                    <PaginationPrevious onClick={() => handlePageChange(pagination.page - 1)} className={pagination.page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
                   </PaginationItem>
                   <PaginationItem><PaginationLink>{pagination.page}</PaginationLink></PaginationItem>
                   <PaginationItem>
-                    <PaginationNext onClick={() => handlePageChange(pagination.page + 1)} className={pagination.page >= pagination.totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:scale-105 transition-transform duration-150'} />
+                    <PaginationNext onClick={() => handlePageChange(pagination.page + 1)} className={pagination.page >= pagination.totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>
