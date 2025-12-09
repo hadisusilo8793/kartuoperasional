@@ -1,5 +1,5 @@
 {
-  "name": "vite-cf-do-v2-runner",
+  "name": "kartu-operasional-x66pveolzj8jkvudu3-jx",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -89,6 +89,7 @@
     "@cloudflare/workers-types": "^4.20250807.0",
     "@eslint/js": "^9.22.0",
     "@types/node": "^22.15.3",
+    "@types/papaparse": "^5.3.14",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
