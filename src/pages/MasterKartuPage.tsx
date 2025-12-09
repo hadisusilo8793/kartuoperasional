@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api-client';
 import { Toaster, toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -26,9 +25,7 @@ const formatCurrency = (value: number | string) => {
   if (isNaN(num)) return '0';
   return new Intl.NumberFormat('id-ID').format(num);
 };
-const parseCurrency = (value: string) => {
-  return parseInt(value.replace(/\D/g, ''), 10) || 0;
-};
+const parseCurrency = (value: string) => parseInt(value.replace(/\D/g, ''), 10) || 0;
 export function MasterKartuPage() {
   const [kartuList, setKartuList] = useState<Kartu[]>([]);
   const [loading, setLoading] = useState(true);
@@ -184,7 +181,7 @@ export function MasterKartuPage() {
       );
     }
     return (
-      <TableRow key={kartu.id} className="hover:shadow-md transition-shadow">
+      <TableRow key={kartu.id} className="hover:bg-accent/50 transition-colors">
         <TableCell>{kartu.nomor}</TableCell>
         <TableCell>{kartu.serial}</TableCell>
         <TableCell>{kartu.jenis}</TableCell>
@@ -274,7 +271,16 @@ export function MasterKartuPage() {
                         </TableCell>
                       </TableRow>
                     )}
-                    {kartuList.map(renderRow)}
+                    {kartuList.length > 0 ? kartuList.map(renderRow) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-48 text-center">
+                          <div className="flex flex-col items-center gap-4">
+                            <p className="text-muted-foreground">Belum ada kartu. Klik untuk menambahkan!</p>
+                            <Button onClick={handleAddNew} variant="outline"><Plus className="w-4 h-4 mr-2"/> Tambah Kartu Pertama</Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </>
                 )}
               </TableBody>

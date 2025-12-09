@@ -144,7 +144,7 @@ export function MasterArmadaPage() {
       );
     }
     return (
-      <TableRow key={armada.id} className="hover:shadow-md transition-shadow">
+      <TableRow key={armada.id} className="hover:bg-accent/50 transition-colors">
         <TableCell>{armada.nomor_armada}</TableCell>
         <TableCell>{armada.jenis}</TableCell>
         <TableCell>{armada.plat}</TableCell>
@@ -216,7 +216,16 @@ export function MasterArmadaPage() {
                         </TableCell>
                       </TableRow>
                     )}
-                    {armadaList.map(renderRow)}
+                    {armadaList.length > 0 ? armadaList.map(renderRow) : (
+                       <TableRow>
+                        <TableCell colSpan={5} className="h-48 text-center">
+                          <div className="flex flex-col items-center gap-4">
+                            <p className="text-muted-foreground">Belum ada armada. Tambahkan untuk memulai!</p>
+                            <Button onClick={handleAddNew} variant="outline"><Plus className="w-4 h-4 mr-2"/> Tambah Armada Pertama</Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </>
                 )}
               </TableBody>

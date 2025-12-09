@@ -142,7 +142,7 @@ export function MasterDriverPage() {
       );
     }
     return (
-      <TableRow key={driver.id} className="hover:shadow-md transition-shadow">
+      <TableRow key={driver.id} className="hover:bg-accent/50 transition-colors">
         <TableCell>{driver.nik}</TableCell>
         <TableCell>{driver.nama}</TableCell>
         <TableCell><span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full inline-block ${driver.status === 'AKTIF' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'}`}>{driver.status}</span></TableCell>
@@ -211,7 +211,16 @@ export function MasterDriverPage() {
                         </TableCell>
                       </TableRow>
                     )}
-                    {driverList.map(renderRow)}
+                    {driverList.length > 0 ? driverList.map(renderRow) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-48 text-center">
+                          <div className="flex flex-col items-center gap-4">
+                            <p className="text-muted-foreground">Belum ada driver. Tambahkan untuk transaksi!</p>
+                            <Button onClick={handleAddNew} variant="outline"><Plus className="w-4 h-4 mr-2"/> Tambah Driver Pertama</Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </>
                 )}
               </TableBody>

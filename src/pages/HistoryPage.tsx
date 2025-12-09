@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import { api } from '@/lib/api-client';
 import { Toaster, toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -63,7 +64,7 @@ export function HistoryPage() {
   useDebounce(() => {
     setDebouncedSearch(searchValues);
   }, 500, [searchValues]);
-  const fetchHistory = async (page = 1) => {
+  const fetchHistory = useCallback(async (page = 1) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -83,10 +84,10 @@ export function HistoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch]);
   useEffect(() => {
     fetchHistory(1);
-  }, [debouncedSearch]);
+  }, [fetchHistory]);
   const handlePageChange = (newPage: number) => {
     if (newPage > 0 && pagination && newPage <= pagination.totalPages) {
       fetchHistory(newPage);
@@ -159,10 +160,17 @@ export function HistoryPage() {
                     <TableRow key={i}><TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
                   ))
                 ) : data.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Tidak ada data riwayat.</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-48 text-center">
+                      <div className="flex flex-col items-center gap-4">
+                        <p className="text-muted-foreground">Belum ada transaksi. Buat yang pertama!</p>
+                        <Button asChild variant="outline"><Link to="/transaksi">Mulai Peminjaman</Link></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   data.map(item => (
-                    <TableRow key={item.id} className="hover:bg-accent">
+                    <TableRow key={item.id} className="hover:bg-accent/50 transition-colors">
                       <TableCell>{formatDate(item.waktu_pinjam)}</TableCell>
                       <TableCell>{item.nomor_armada} ({item.plat})</TableCell>
                       <TableCell>{item.nama_driver}</TableCell>

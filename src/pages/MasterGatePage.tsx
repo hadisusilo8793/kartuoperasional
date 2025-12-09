@@ -151,7 +151,7 @@ export function MasterGatePage() {
       );
     }
     return (
-      <TableRow key={gate.id} className="hover:shadow-md transition-shadow">
+      <TableRow key={gate.id} className="hover:bg-accent/50 transition-colors">
         <TableCell>{gate.kode}</TableCell>
         <TableCell>{gate.nama}</TableCell>
         <TableCell>{gate.kategori}</TableCell>
@@ -231,7 +231,16 @@ export function MasterGatePage() {
                         </TableCell>
                       </TableRow>
                     )}
-                    {gateList.map(renderRow)}
+                    {gateList.length > 0 ? gateList.map(renderRow) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-48 text-center">
+                          <div className="flex flex-col items-center gap-4">
+                            <p className="text-muted-foreground">Belum ada gate. Tambahkan lokasi tol/parkir!</p>
+                            <Button onClick={handleAddNew} variant="outline"><Plus className="w-4 h-4 mr-2"/> Tambah Gate Pertama</Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </>
                 )}
               </TableBody>

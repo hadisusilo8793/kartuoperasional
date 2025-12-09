@@ -30,7 +30,7 @@ type DashboardData = {
   chartData: { tol: number; parkir: number };
 };
 const StatCard = ({ icon, title, value }: { icon: React.ReactNode; title: string; value: number | string }) => (
-  <Card className="rounded-[18px] shadow-soft hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+  <Card className="rounded-[18px] shadow-soft hover:shadow-md transition-transform duration-200 hover:-translate-y-0.5">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
       <div className="text-cyan-600">{icon}</div>
@@ -59,7 +59,7 @@ export function DashboardPage() {
           return;
         }
         toast.error(errorMessage);
-        setData(null); // Set to null on error to show empty/error state
+        setData(null);
       } finally {
         setLoading(false);
       }
@@ -95,11 +95,13 @@ export function DashboardPage() {
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-2 rounded-[18px] shadow-soft p-6">
           <h2 className="text-lg font-semibold mb-4">Biaya Tol vs Parkir</h2>
-          <div className="h-80 hover:ease-out duration-200">
-            {loading || !data ? (
+          <div className="h-80">
+            {loading ? (
               <Skeleton className="w-full h-full" />
-            ) : (chartData[0].value === 0 && chartData[1].value === 0) ? (
-              <div className="flex items-center justify-center h-full text-muted-foreground">Belum ada data biaya transaksi.</div>
+            ) : !data || (chartData[0].value === 0 && chartData[1].value === 0) ? (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                Belum ada data transaksi untuk ditampilkan.
+              </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -118,17 +120,17 @@ export function DashboardPage() {
         <Card className="rounded-[18px] shadow-soft p-6">
           <h2 className="text-lg font-semibold mb-4">Log Terbaru</h2>
           <div className="space-y-3">
-            {loading || !data ? (
+            {loading ? (
               Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)
-            ) : data.logs && data.logs.length > 0 ? (
-              data.logs.map((log) => (
-                <div key={log.id ?? log.waktu} className="text-sm border-b border-slate-100 pb-2 last:border-b-0">
+            ) : !data || data.logs.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-10">Log pertama akan muncul setelah ada aktivitas.</p>
+            ) : (
+              data.logs.map((log, index) => (
+                <div key={log.id ?? index} className="text-sm border-b border-slate-100 pb-2 last:border-b-0">
                   <p className="font-medium truncate text-slate-700">{log.pesan}</p>
                   <p className="text-xs text-slate-400">{new Date(log.waktu).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</p>
                 </div>
               ))
-            ) : (
-              <p className="text-sm text-muted-foreground">Tidak ada log terbaru.</p>
             )}
           </div>
         </Card>
@@ -139,17 +141,17 @@ export function DashboardPage() {
           Kartu Saldo Rendah
         </h2>
         <div>
-          {loading || !data ? (
+          {loading ? (
             <Skeleton className="h-8 w-full" />
-          ) : data.lowBalance && data.lowBalance.length > 0 ? (
+          ) : !data || data.lowBalance.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Semua kartu memiliki saldo yang cukup.</p>
+          ) : (
             data.lowBalance.map((card, index) => (
               <div key={index} className="flex justify-between items-center p-2 rounded-lg hover:bg-amber-50">
                 <span className="text-slate-600">Kartu <strong>{card.nomor}</strong></span>
                 <span className="font-semibold text-amber-700">{formatCurrency(card.saldo)}</span>
               </div>
             ))
-          ) : (
-            <p className="text-sm text-muted-foreground">Tidak ada kartu dengan saldo rendah.</p>
           )}
         </div>
       </Card>
