@@ -8,9 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const gateRowsContainer = document.getElementById('gate-rows-container');
     const parkirRowsContainer = document.getElementById('parkir-rows-container');
     const modal = document.getElementById('confirmation-modal');
+    const modalSummary = document.getElementById('modal-summary');
     const confirmModalBtn = document.getElementById('confirm-modal-btn');
     const cancelModalBtn = document.getElementById('cancel-modal-btn');
-    let pinjamanAktif = [], gates = [], selectedPinjaman = null;
+    const submitBtn = document.getElementById('submitBtn');
+    let pinjamanAktif = [], gates = [], selectedPinjaman = null, saldoAwal = 0;
     const loadInitialData = async () => {
         try {
             const [pinjamanRes, gateRes] = await Promise.all([
@@ -32,17 +34,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const option = document.createElement('option');
             option.value = p.transaksi_id;
             option.textContent = `${p.nomor_kartu} - ${p.nama_driver} - ${p.nomor_armada} (${p.plat})`;
+            option.dataset.kartuNomor = p.nomor_kartu;
             pinjamanSelect.appendChild(option);
         });
     };
-    pinjamanSelect.addEventListener('change', (e) => {
+    pinjamanSelect.addEventListener('change', async (e) => {
         const trxId = e.target.value;
+        const selectedOption = e.target.options[e.target.selectedIndex];
         selectedPinjaman = pinjamanAktif.find(p => p.transaksi_id == trxId);
         if (selectedPinjaman) {
-            detailSection.classList.remove('hidden');
-            gateRowsContainer.innerHTML = '';
-            parkirRowsContainer.innerHTML = '';
-            calculateTotals();
+            try {
+                const kartuNomor = selectedOption.dataset.kartuNomor;
+                const res = await window.app.api.fetch(`/api/kartu?search=${kartuNomor}`);
+                saldoAwal = res.data[0].saldo;
+                detailSection.classList.remove('hidden');
+                gateRowsContainer.innerHTML = '';
+                parkirRowsContainer.innerHTML = '';
+                calculateTotals();
+            } catch (error) {
+                window.app.ui.showToast('Gagal mengambil saldo awal kartu.', 'error');
+                detailSection.classList.add('hidden');
+            }
         } else {
             detailSection.classList.add('hidden');
         }
@@ -87,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             calculateTotals();
         }
     });
-    const calculateTotals = async () => {
+    const calculateTotals = () => {
         const gateBiaya = Array.from(document.querySelectorAll('[name="gate_biaya"]')).reduce((sum, input) => sum + parseInt(input.value.replace(/\D/g, '') || 0, 10), 0);
         const parkirBiaya = Array.from(document.querySelectorAll('[name="parkir_biaya"]')).reduce((sum, input) => sum + parseInt(input.value.replace(/\D/g, '') || 0, 10), 0);
         const totalBiaya = gateBiaya + parkirBiaya;
@@ -95,34 +107,45 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('total-parkir').textContent = `Rp ${parkirBiaya.toLocaleString('id-ID')}`;
         document.getElementById('total-biaya').textContent = `Rp ${totalBiaya.toLocaleString('id-ID')}`;
         if (selectedPinjaman) {
-            const card = await window.app.api.fetch(`/api/kartu?nomor=${selectedPinjaman.nomor_kartu}`);
-            const saldoAwal = card.data[0].saldo;
             const saldoAkhir = saldoAwal - totalBiaya;
             document.getElementById('saldo-akhir').textContent = `Rp ${saldoAkhir.toLocaleString('id-ID')}`;
         }
     };
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        // Show confirmation modal
-        modal.classList.remove('hidden');
-        // Populate modal summary
-    });
-    cancelModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
-    confirmModalBtn.addEventListener('click', async () => {
+    const getFormData = () => {
         const gate_in_out = Array.from(document.querySelectorAll('#gate-rows-container .dynamic-row')).map(row => ({
             gate_id: row.querySelector('[name="gate_id"]').value,
             biaya: parseInt(row.querySelector('[name="gate_biaya"]').value.replace(/\D/g, '') || 0, 10)
-        }));
+        })).filter(item => item.gate_id && item.biaya > 0);
         const parkir = Array.from(document.querySelectorAll('#parkir-rows-container .dynamic-row')).map(row => ({
             lokasi: row.querySelector('[name="parkir_lokasi"]').value,
             biaya: parseInt(row.querySelector('[name="parkir_biaya"]').value.replace(/\D/g, '') || 0, 10)
-        }));
-        const data = {
+        })).filter(item => item.lokasi && item.biaya > 0);
+        return {
             gate_in_out,
             parkir,
             kondisi: document.getElementById('kondisi').value,
             deskripsi: document.getElementById('deskripsi').value,
         };
+    };
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = getFormData();
+        if (formData.gate_in_out.length === 0 && formData.parkir.length === 0) {
+            window.app.ui.showToast('Harap isi setidaknya satu rincian biaya tol atau parkir.', 'error');
+            return;
+        }
+        modalSummary.innerHTML = `
+            <p><strong>Transaksi:</strong> ${pinjamanSelect.options[pinjamanSelect.selectedIndex].text}</p>
+            <p><strong>Total Tol:</strong> ${document.getElementById('total-tol').textContent}</p>
+            <p><strong>Total Parkir:</strong> ${document.getElementById('total-parkir').textContent}</p>
+            <p><strong>Total Biaya:</strong> ${document.getElementById('total-biaya').textContent}</p>
+            <p><strong>Saldo Akhir:</strong> ${document.getElementById('saldo-akhir').textContent}</p>
+        `;
+        modal.classList.remove('hidden');
+    });
+    cancelModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
+    window.app.ui.antiDoubleClick(confirmModalBtn, async () => {
+        const data = getFormData();
         try {
             const response = await window.app.api.fetch(`/api/transaksi/pengembalian/${selectedPinjaman.transaksi_id}`, {
                 method: 'POST',

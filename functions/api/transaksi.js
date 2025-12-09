@@ -31,7 +31,10 @@ app.post('/pinjam', async (c) => {
     const { D1 } = c.env;
     try {
         const { kartu_id, driver_id, armada_id, tujuan } = await c.req.json();
-        const card = await D1.prepare("SELECT saldo, status_pinjam FROM kartu WHERE id = ?").bind(kartu_id).first();
+        if (!kartu_id || !driver_id || !armada_id || !tujuan) {
+            return c.json({ success: false, error: 'Semua field wajib diisi.' }, 400);
+        }
+        const card = await D1.prepare("SELECT saldo, status_pinjam FROM kartu WHERE id = ? AND status = 'AKTIF'").bind(kartu_id).first();
         if (!card || card.status_pinjam !== 'TERSEDIA') {
             return c.json({ success: false, error: 'Kartu tidak tersedia untuk dipinjam' }, 400);
         }
@@ -40,6 +43,9 @@ app.post('/pinjam', async (c) => {
             "INSERT INTO transaksi (kartu_id, driver_id, armada_id, saldo_awal, tujuan, status, waktu_pinjam) VALUES (?, ?, ?, ?, ?, ?, ?)"
         ).bind(kartu_id, driver_id, armada_id, card.saldo, tujuan, 'AKTIF', waktu_pinjam).run();
         const transaksi_id = trxInsert.meta.last_row_id;
+        if (!transaksi_id) {
+            throw new Error("Gagal mendapatkan ID transaksi baru.");
+        }
         const pinjamanAktifInsert = D1.prepare(
             "INSERT INTO pinjaman_aktif (transaksi_id, kartu_id, driver_id, armada_id, waktu_pinjam, tujuan) VALUES (?, ?, ?, ?, ?, ?)"
         ).bind(transaksi_id, kartu_id, driver_id, armada_id, waktu_pinjam, tujuan);
@@ -58,6 +64,9 @@ app.post('/pengembalian/:id', async (c) => {
     const { id: transaksi_id } = c.req.param();
     try {
         const { gate_in_out, parkir, kondisi, deskripsi } = await c.req.json();
+        if ((!gate_in_out || gate_in_out.length === 0) && (!parkir || parkir.length === 0)) {
+            return c.json({ success: false, error: 'Rincian biaya tol atau parkir wajib diisi.' }, 400);
+        }
         const trx = await D1.prepare("SELECT * FROM transaksi WHERE id = ?").bind(transaksi_id).first();
         if (!trx || trx.status !== 'AKTIF') {
             return c.json({ success: false, error: 'Transaksi tidak valid atau sudah selesai' }, 400);
@@ -68,15 +77,15 @@ app.post('/pengembalian/:id', async (c) => {
         const saldo_akhir = trx.saldo_awal - total_biaya;
         const waktu_kembali = new Date().toISOString();
         const updateTrx = D1.prepare(
-            `UPDATE transaksi SET 
-            gate_in_out = ?, parkir = ?, total_tol = ?, total_parkir = ?, total_biaya = ?, 
-            kondisi = ?, deskripsi = ?, status = 'SELESAI', waktu_kembali = ? 
+            `UPDATE transaksi SET
+            gate_in_out = ?, parkir = ?, total_tol = ?, total_parkir = ?, total_biaya = ?,
+            kondisi = ?, deskripsi = ?, status = 'SELESAI', waktu_kembali = ?
             WHERE id = ?`
         ).bind(JSON.stringify(gate_in_out), JSON.stringify(parkir), total_tol, total_parkir, total_biaya, kondisi, deskripsi, waktu_kembali, transaksi_id);
         const updateKartu = D1.prepare("UPDATE kartu SET saldo = ?, status_pinjam = 'TERSEDIA' WHERE id = ?").bind(saldo_akhir, trx.kartu_id);
         const deletePinjamanAktif = D1.prepare("DELETE FROM pinjaman_aktif WHERE transaksi_id = ?").bind(transaksi_id);
         await D1.batch([updateTrx, updateKartu, deletePinjamanAktif]);
-        await logAction(D1, 'INFO', `Transaksi (ID: ${transaksi_id}) telah diselesaikan.`);
+        await logAction(D1, 'INFO', `Transaksi (ID: ${transaksi_id}) telah diselesaikan. Saldo akhir kartu: ${saldo_akhir}`);
         return c.json({ success: true, message: 'Pengembalian berhasil dicatat' });
     } catch (e) {
         await logAction(D1, 'ERROR', `Gagal mencatat pengembalian: ${e.message}`);

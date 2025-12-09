@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const tableBody = document.getElementById('data-table-body');
     const addBtn = document.getElementById('add-btn');
+    // Assuming CSV import buttons will be added to the HTML if needed
     const fetchData = async () => {
         tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">Memuat data...</td></tr>`;
         try {
@@ -33,15 +34,15 @@ document.addEventListener('DOMContentLoaded', () => {
         <td class="px-6 py-4"><span class="status-${item.status.toLowerCase()}">${item.status}</span></td>
         <td class="px-6 py-4 text-center">
             <div class="flex justify-center gap-2">
-                <button class="edit-btn text-cyan-600 hover:text-cyan-800"><i data-lucide="edit" class="w-4 h-4"></i></button>
-                <button class="delete-btn text-red-600 hover:red-800"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                <button class="edit-btn text-cyan-600 hover:text-cyan-800" title="Edit"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                <button class="delete-btn text-red-600 hover:text-red-800" title="Hapus"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
         </td>
     `;
     const createFormHtml = (item = {}) => `
         <td class="px-6 py-4"><input type="text" name="nomor_armada" value="${item.nomor_armada || ''}" class="form-input-sm" required></td>
-        <td class="px-6 py-4"><input type="text" name="jenis" value="${item.jenis || ''}" class="form-input-sm" required></td>
-        <td class="px-6 py-4"><input type="text" name="plat" value="${item.plat || ''}" class="form-input-sm" required></td>
+        <td class="px-6 py-4"><input type="text" name="jenis" value="${item.jenis || ''}" class="form-input-sm uppercase-input" required></td>
+        <td class="px-6 py-4"><input type="text" name="plat" value="${item.plat || ''}" class="form-input-sm uppercase-input" required></td>
         <td class="px-6 py-4">
             <select name="status" class="form-input-sm">
                 <option value="AKTIF" ${item.status === 'AKTIF' ? 'selected' : ''}>AKTIF</option>
@@ -50,8 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td class="px-6 py-4 text-center">
             <div class="flex justify-center gap-2">
-                <button class="save-btn text-green-600 hover:text-green-800"><i data-lucide="check" class="w-4 h-4"></i></button>
-                <button class="cancel-btn text-red-600 hover:red-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+                <button class="save-btn text-green-600 hover:text-green-800" title="Simpan"><i data-lucide="check" class="w-4 h-4"></i></button>
+                <button class="cancel-btn text-red-600 hover:text-red-800" title="Batal"><i data-lucide="x" class="w-4 h-4"></i></button>
             </div>
         </td>
     `;
@@ -81,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tableBody.prepend(newRow);
         lucide.createIcons();
     });
-    tableBody.addEventListener('click', (e) => {
+    tableBody.addEventListener('click', async (e) => {
         const editBtn = e.target.closest('.edit-btn');
         const deleteBtn = e.target.closest('.delete-btn');
         const saveBtn = e.target.closest('.save-btn');
@@ -89,26 +90,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (editBtn) {
             const row = editBtn.closest('tr');
             const id = row.dataset.id;
-            window.app.api.fetch(`/api/armada?id=${id}`).then(res => {
-                const item = res.data.find(d => d.id == id);
+            try {
+                const res = await window.app.api.fetch(`/api/armada?id=${id}`);
+                const item = res.data[0];
                 row.dataset.original = JSON.stringify(item);
                 row.innerHTML = createFormHtml(item);
                 lucide.createIcons();
-            });
+            } catch (error) {
+                window.app.ui.showToast('Gagal mengambil data armada.', 'error');
+            }
         }
         if (deleteBtn) {
             const row = deleteBtn.closest('tr');
             if (confirm('Apakah Anda yakin ingin menghapus armada ini?')) {
-                window.app.api.fetch(`/api/armada/${row.dataset.id}`, { method: 'DELETE' })
-                    .then(res => {
-                        window.app.ui.showToast(res.message, 'success');
-                        fetchData();
-                    })
-                    .catch(err => window.app.ui.showToast(err.message, 'error'));
+                try {
+                    const res = await window.app.api.fetch(`/api/armada/${row.dataset.id}`, { method: 'DELETE' });
+                    window.app.ui.showToast(res.message, 'success');
+                    fetchData();
+                } catch (err) {
+                    window.app.ui.showToast(err.message, 'error');
+                }
             }
         }
         if (saveBtn) {
-            handleSave(saveBtn.closest('tr'));
+            window.app.ui.antiDoubleClick(saveBtn, () => handleSave(saveBtn.closest('tr')));
         }
         if (cancelBtn) {
             const row = cancelBtn.closest('tr');
@@ -119,6 +124,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 row.remove();
             }
+        }
+    });
+    tableBody.addEventListener('input', (e) => {
+        if (e.target.classList.contains('uppercase-input')) {
+            e.target.value = e.target.value.toUpperCase();
         }
     });
     fetchData();
