@@ -34,27 +34,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const option = document.createElement('option');
             option.value = p.transaksi_id;
             option.textContent = `${p.nomor_kartu} - ${p.nama_driver} - ${p.nomor_armada} (${p.plat})`;
-            option.dataset.kartuNomor = p.nomor_kartu;
             pinjamanSelect.appendChild(option);
         });
     };
     pinjamanSelect.addEventListener('change', async (e) => {
         const trxId = e.target.value;
-        const selectedOption = e.target.options[e.target.selectedIndex];
         selectedPinjaman = pinjamanAktif.find(p => p.transaksi_id == trxId);
         if (selectedPinjaman) {
-            try {
-                const kartuNomor = selectedOption.dataset.kartuNomor;
-                const res = await window.app.api.fetch(`/api/kartu?search=${kartuNomor}`);
-                saldoAwal = res.data[0].saldo;
-                detailSection.classList.remove('hidden');
-                gateRowsContainer.innerHTML = '';
-                parkirRowsContainer.innerHTML = '';
-                calculateTotals();
-            } catch (error) {
-                window.app.ui.showToast('Gagal mengambil saldo awal kartu.', 'error');
-                detailSection.classList.add('hidden');
-            }
+            saldoAwal = selectedPinjaman.saldo_awal;
+            detailSection.classList.remove('hidden');
+            gateRowsContainer.innerHTML = '';
+            parkirRowsContainer.innerHTML = '';
+            calculateTotals();
         } else {
             detailSection.classList.add('hidden');
         }
@@ -144,21 +135,23 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('hidden');
     });
     cancelModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
-    window.app.ui.antiDoubleClick(confirmModalBtn, async () => {
-        const data = getFormData();
-        try {
-            const response = await window.app.api.fetch(`/api/transaksi/pengembalian/${selectedPinjaman.transaksi_id}`, {
-                method: 'POST',
-                body: JSON.stringify(data)
-            });
-            window.app.ui.showToast(response.message, 'success');
-            modal.classList.add('hidden');
-            form.reset();
-            detailSection.classList.add('hidden');
-            loadInitialData();
-        } catch (error) {
-            window.app.ui.showToast(error.message, 'error');
-        }
+    confirmModalBtn.addEventListener('click', () => {
+        window.app.ui.antiDoubleClick(confirmModalBtn, async () => {
+            const data = getFormData();
+            try {
+                const response = await window.app.api.fetch(`/api/transaksi/pengembalian/${selectedPinjaman.transaksi_id}`, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+                window.app.ui.showToast(response.message, 'success');
+                modal.classList.add('hidden');
+                form.reset();
+                detailSection.classList.add('hidden');
+                loadInitialData();
+            } catch (error) {
+                window.app.ui.showToast(error.message, 'error');
+            }
+        });
     });
     loadInitialData();
 });

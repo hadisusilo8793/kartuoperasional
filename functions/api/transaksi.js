@@ -14,8 +14,18 @@ app.get('/pinjaman-aktif', async (c) => {
     const { D1 } = c.env;
     try {
         const { results } = await D1.prepare(`
-            SELECT pa.id, pa.transaksi_id, k.nomor as nomor_kartu, d.nama as nama_driver, a.nomor_armada, a.plat, pa.tujuan, pa.waktu_pinjam
+            SELECT 
+                pa.id, 
+                pa.transaksi_id, 
+                t.saldo_awal,
+                k.nomor as nomor_kartu, 
+                d.nama as nama_driver, 
+                a.nomor_armada, 
+                a.plat, 
+                pa.tujuan, 
+                pa.waktu_pinjam
             FROM pinjaman_aktif pa
+            JOIN transaksi t ON pa.transaksi_id = t.id
             JOIN kartu k ON pa.kartu_id = k.id
             JOIN driver d ON pa.driver_id = d.id
             JOIN armada a ON pa.armada_id = a.id

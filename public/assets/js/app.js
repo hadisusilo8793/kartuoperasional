@@ -91,18 +91,17 @@
         const sidebar = document.getElementById('sidebar');
         const toggleClose = document.getElementById('sidebar-toggle-close');
         const toggleOpen = document.getElementById('sidebar-toggle-open');
-        const mainContent = document.querySelector('.flex-1.flex.flex-col');
         const collapseSidebar = () => {
+            if (!sidebar) return;
             sidebar.classList.add('w-20');
             sidebar.classList.remove('w-64');
             document.querySelectorAll('.sidebar-text').forEach(el => el.classList.add('hidden'));
-            if (mainContent) mainContent.style.marginLeft = '80px';
         };
         const expandSidebar = () => {
+            if (!sidebar) return;
             sidebar.classList.remove('w-20');
             sidebar.classList.add('w-64');
             document.querySelectorAll('.sidebar-text').forEach(el => el.classList.remove('hidden'));
-            if (mainContent) mainContent.style.marginLeft = '256px';
         };
         if (toggleClose) toggleClose.addEventListener('click', collapseSidebar);
         if (toggleOpen) toggleOpen.addEventListener('click', expandSidebar);

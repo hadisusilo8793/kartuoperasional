@@ -1,148 +1,110 @@
-// Home page of the app, Currently a demo page for demonstration.
-// Please rewrite this file to implement your own logic. Do not delete it to use some other file as homepage. Simply replace the entire contents of this file.
-import { useEffect } from 'react'
-import { Sparkles } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { ThemeToggle } from '@/components/ThemeToggle'
-import { Toaster, toast } from '@/components/ui/sonner'
-import { create } from 'zustand'
-import { useShallow } from 'zustand/react/shallow'
-// import { AppLayout } from '@/components/layout/AppLayout'
-
-// Timer store: independent slice with a clear, minimal API, for demonstration
-type TimerState = {
-  isRunning: boolean;
-  elapsedMs: number;
-  start: () => void;
-  pause: () => void;
-  reset: () => void;
-  tick: (deltaMs: number) => void;
-}
-
-const useTimerStore = create<TimerState>((set) => ({
-  isRunning: false,
-  elapsedMs: 0,
-  start: () => set({ isRunning: true }),
-  pause: () => set({ isRunning: false }),
-  reset: () => set({ elapsedMs: 0, isRunning: false }),
-  tick: (deltaMs) => set((s) => ({ elapsedMs: s.elapsedMs + deltaMs })),
-}))
-
-// Counter store: separate slice to showcase multiple stores without coupling
-type CounterState = {
-  count: number;
-  inc: () => void;
-  reset: () => void;
-}
-
-const useCounterStore = create<CounterState>((set) => ({
-  count: 0,
-  inc: () => set((s) => ({ count: s.count + 1 })),
-  reset: () => set({ count: 0 }),
-}))
-
-function formatDuration(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000))
-  const m = Math.floor(total / 60)
-  const s = total % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
-
-export function HomePage() {
-  // Select only what is needed to avoid unnecessary re-renders
-  const { isRunning, elapsedMs } = useTimerStore(
-    useShallow((s) => ({ isRunning: s.isRunning, elapsedMs: s.elapsedMs })),
-  )
-  const start = useTimerStore((s) => s.start)
-  const pause = useTimerStore((s) => s.pause)
-  const resetTimer = useTimerStore((s) => s.reset)
-  const count = useCounterStore((s) => s.count)
-  const inc = useCounterStore((s) => s.inc)
-  const resetCount = useCounterStore((s) => s.reset)
-
-  // Drive the timer only while running; avoid update-depth issues with a scoped RAF
-  useEffect(() => {
-    if (!isRunning) return
-    let raf = 0
-    let last = performance.now()
-    const loop = () => {
-      const now = performance.now()
-      const delta = now - last
-      last = now
-      // Read store API directly to keep effect deps minimal and stable
-      useTimerStore.getState().tick(delta)
-      raf = requestAnimationFrame(loop)
+import { useState, FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Toaster, toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+// This is a placeholder auth logic. In a real app, use a proper auth provider.
+const auth = {
+  saveToken: (token: string) => localStorage.setItem('authToken', token),
+  login: async (username?: string, password?: string) => {
+    // This is a mock login. In a real app, you'd call an API.
+    // The backend logic is in functions/api/auth.js
+    const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+    });
+    const data = await response.json();
+    if (data.success && data.token) {
+        auth.saveToken(data.token);
     }
-    raf = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(raf)
-  }, [isRunning])
-
-  const onPleaseWait = () => {
-    inc()
-    if (!isRunning) {
-      start()
-      toast.success('Building your app…', {
-        description: 'Hang tight, we\'re setting everything up.',
-      })
-    } else {
-      pause()
-      toast.info('Taking a short pause', {
-        description: 'We\'ll continue shortly.',
-      })
-    }
+    return data;
   }
-
-  const formatted = formatDuration(elapsedMs)
-
+};
+export function HomePage() {
+  const navigate = useNavigate();
+  const [username, setUsername] = useState('HADI SUSILO');
+  const [password, setPassword] = useState('Wiwokdetok8793');
+  const [isLoading, setIsLoading] = useState(false);
+  const handleLogin = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const data = await auth.login(username, password);
+      if (data.success) {
+        toast.success('Login successful!');
+        // A small delay to let the user see the success message
+        setTimeout(() => {
+          // In a real app, you would redirect to a dashboard page
+          // For this template, we'll just log it.
+          console.log('Login successful, redirecting...');
+          // Since this is a vanilla JS app, we will redirect manually
+          window.location.href = '/index.html';
+        }, 1000);
+      } else {
+        toast.error(data.error || 'Invalid credentials');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
-    // <AppLayout> Uncomment this if you want to use the sidebar
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 overflow-hidden relative">
-        <ThemeToggle />
-        <div className="absolute inset-0 bg-gradient-rainbow opacity-10 dark:opacity-20 pointer-events-none" />
-        <div className="text-center space-y-8 relative z-10 animate-fade-in">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-primary floating">
-              <Sparkles className="w-8 h-8 text-white rotating" />
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-gray-900 p-4">
+      <Toaster richColors position="top-center" />
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-navy-500/10" />
+      <Card className="w-full max-w-md mx-auto shadow-2xl rounded-2xl border-border/20 animate-fade-in z-10">
+        <CardHeader className="text-center space-y-2">
+          <CardTitle className="text-3xl font-bold" style={{ color: '#0B2340' }}>
+            Kartu Operasional
+          </CardTitle>
+          <CardDescription>Silakan login untuk melanjutkan</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="Username"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="h-12 text-base"
+              />
             </div>
-          </div>
-          <h1 className="text-5xl md:text-7xl font-display font-bold text-balance leading-tight">
-            Creating your <span className="text-gradient">app</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto text-pretty">
-            Your application would be ready soon.
-          </p>
-          <div className="flex justify-center gap-4">
-            <Button 
-              size="lg"
-              onClick={onPleaseWait}
-              className="btn-gradient px-8 py-4 text-lg font-semibold hover:-translate-y-0.5 transition-all duration-200"
-              aria-live="polite"
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-12 text-base"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full h-12 text-lg font-semibold transition-all duration-300"
+              disabled={isLoading}
+              style={{ backgroundColor: '#0B2340', color: 'white' }}
             >
-              Please Wait
+              {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Login'}
             </Button>
-          </div>
-          <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-            <div>
-              Time elapsed: <span className="font-medium tabular-nums text-foreground">{formatted}</span>
-            </div>
-            <div>
-              Coins: <span className="font-medium tabular-nums text-foreground">{count}</span>
-            </div>
-          </div>
-          <div className="flex justify-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => { resetTimer(); resetCount(); toast('Reset complete') }}>
-              Reset
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => { inc(); toast('Coin added') }}>
-              Add Coin
-            </Button>
-          </div>
-        </div>
-        <footer className="absolute bottom-8 text-center text-muted-foreground/80">
-          <p>Powered by Cloudflare</p>
-        </footer>
-        <Toaster richColors closeButton />
-      </div>
-    // </AppLayout> Uncomment this if you want to use the sidebar
-  )
+          </form>
+        </CardContent>
+      </Card>
+      <footer className="absolute bottom-4 text-center text-sm text-muted-foreground/80">
+        <p>Built with ❤️ at Cloudflare</p>
+      </footer>
+    </div>
+  );
 }
